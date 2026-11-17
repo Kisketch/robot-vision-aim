@@ -328,3 +328,33 @@
 - 出处：data/eval_cache/3/v3_n0_track.csv、data/eval_cache/4/v4_n0_track.csv（冻结 N0 运行），
   脚本运行时直接读取 CSV。
 
+
+## 20. 延迟链三图：拆分、估错代价与帧率对比（2026-11-17 新增）
+
+![Latency chain](charts/latency_chain.svg)
+
+- **读法**：把原来打包的 60 ms 拆成传输、处理、串口 + MCU、发射四段逐段画出，
+  另加弹丸飞行时间（随距离变）。模型总出膛前延迟约 65 ms，5 m 处再加飞行约 210 ms。
+- **注意**：各段数值是队伍提供的范围（2026-11-17），测量方法与原始数据待补，
+  不是实测标定；只写进 `sentry_165hz.yaml`，没有回写 `default.yaml`。
+- 出处：docs/studies/latency_chain_165hz.md §1；tools/latency_study.json。
+
+![Latency error](charts/latency_error.svg)
+
+- **读法**：横轴是"真实出膛时刻 − 模型时刻"。曲线左高右低：低估延迟（右侧）
+  的代价远大于高估——漏算 30 ms 发射延迟时，10 rad/s 旋转场景（仿真 165 Hz）
+  从 98.9% 掉到 65.3%；串口 + MCU 的 ±10 ms 抖动代价很小（平均约 −0.5 pp）。
+- **注意**：左高部分源于仿真云台的一阶滞后（τ = 30 ms）与"提前出膛"互相抵消，
+  不要读成"延迟越小越差"；据此加的 `gimbal_lag` 补偿已被真实视频否决
+  （4.avi 参考口径 40 ms 补偿时 68.6% → 56.3%），出厂保持 0。
+- 出处：docs/studies/latency_chain_165hz.md §2；tools/latency_study.json
+  （`autoaim_sim --latency-error / --latency-jitter`）。
+
+![Latency fps](charts/latency_fps.svg)
+
+- **读法**：同一批场景在仿真 25 Hz（sentry.yaml，60 ms 打包延迟）与仿真 165 Hz
+  （sentry_165hz.yaml）下的命中率。165 Hz 在横移场景约 +5 pp，变速旋转与摇摆略降。
+- **注意**：全部是仿真推演，不是 165 Hz 实拍（仓库真实视频只有 25 fps）；
+  165 Hz 配置的链总长 65 ms 比 25 Hz 的 60 ms 长，帧率与链长两个变量没有
+  单独拆开验证，研究报告原文已注明。跟踪器噪声参数没有为 165 Hz 重调。
+- 出处：docs/studies/latency_chain_165hz.md §3；tools/latency_study.json。
