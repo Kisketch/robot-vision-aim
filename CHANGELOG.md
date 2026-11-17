@@ -4,6 +4,22 @@
 > 合并后也记录全仓级变更，但不追求完整——全仓变更以 git 提交历史与
 > docs/ 下各轮审查文档（如 docs/reviews/engineering_review_r6.md）为准。
 
+## 2026-11-17 — 弹道曲线可视化 + 距离下发 MCU
+
+- **弹道曲线**：新增 `Ballistics::trajectory(pitch, s_end, samples)`，按与
+  `simulate()` 相同的 RK4 + 二次阻力模型沿射程采样弹道点；新增
+  `autoaim::drawTrajectory()`，把当前 `AimCommand` 的预测弹道投影进画面，
+  弹着端标注目标距离与飞行时间。`autoaim_video` 的 overlay、`sentry_offline
+  --render`、`sentry_robot` 调试窗口均已接入。只用于可视化，不进瞄准热路径。
+- **距离下发**：`SerialCommand` 增 `distance_mm`，`toSerial()` 由
+  `AimCommand::distance` 填入（钳在 0–100 m，非有限值记 0），`packControl()`
+  写入 21 B 指令帧 byte 14–17（旧协议恒为 0 的 `ui_y` 槽）。帧长、布局不变；
+  `packControl` 去掉了原先未被使用的第二个参数。MCU 端要使用距离需固件读取该槽。
+- **装甲尺寸不变**：小装甲仍用 0.135×0.055 m（新检测器板面角点定义）；
+  0.130×0.050 m 是旧代码灯条端点定义，不混用。
+- 验证：构建 0 警告；ctest 5/5（新增弹道采样与距离字段测试）；`autoaim_sim`
+  输出与改动前逐字节一致（瞄准/弹道解算路径未改动）。
+
 ## 2026-11-14 — MVS 像素格式启动期固定 + 硬件集成前深度复检
 
 - **M1 修复**（[deep_recheck](docs/reviews/deep_recheck_2026-11-14.md)）：

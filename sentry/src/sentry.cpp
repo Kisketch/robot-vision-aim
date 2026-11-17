@@ -104,6 +104,9 @@ SerialCommand toSerial(const AimCommand& cmd, double compensate_yaw_deg,
     s.yaw = static_cast<int32_t>(std::lround((cmd.yaw * kRadToDeg + compensate_yaw_deg) * 1e4));
     s.pitch = static_cast<int32_t>(std::lround((cmd.pitch * kRadToDeg + compensate_pitch_deg) * 1e4));
     s.yaw_vel = static_cast<int32_t>(std::lround((yaw_vel_rad * kRadToDeg) * 1e4));
+    // Clamp to a sane range (100 m) so a diverged state cannot overflow the i32.
+    if (std::isfinite(cmd.distance))
+        s.distance_mm = static_cast<int32_t>(std::lround(std::clamp(cmd.distance, 0.0, 100.0) * 1000.0));
     s.found = 1;
     s.fire = cmd.fire ? 2 : 0;
     return s;

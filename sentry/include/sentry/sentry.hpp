@@ -60,6 +60,8 @@ public:
     const autoaim::Config& config() const { return cfg_; }
     const autoaim::CameraModel& camera() const { return camera_; }
     const autoaim::Detector& detector() const { return detector_; }
+    // Ballistic model the aimer was built from (for trajectory overlays).
+    const autoaim::Ballistics& ballistics() const { return ballistics_; }
 
 private:
     autoaim::Config cfg_;

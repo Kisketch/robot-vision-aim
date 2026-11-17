@@ -17,8 +17,32 @@ cv::Point toPx(const cv::Point2d& p) { return {cvRound(p.x), cvRound(p.y)}; }
 
 }  // namespace
 
+void drawTrajectory(cv::Mat& img, const AimCommand& cmd, const Ballistics& ballistics, const CameraModel& camera,
+                    const cv::Scalar& color) {
+    if (!cmd.valid) return;
+    const double s_end = std::hypot(cmd.aim_point[0], cmd.aim_point[1]);
+    const auto path = ballistics.trajectory(cmd.pitch, s_end);
+    if (path.size() < 2) return;
+    const double cy = std::cos(cmd.yaw), sy = std::sin(cmd.yaw);
+    std::vector<cv::Point> poly;
+    for (const auto& p : path) {
+        const cv::Vec3d w(p.s * cy, p.s * sy, p.h);
+        // The first metre or so is beside / behind the camera (lever arm);
+        // projecting it would blow up, so the curve starts where it is visible.
+        if (!camera.inFront(w)) continue;
+        poly.push_back(toPx(camera.project(w)));
+    }
+    if (poly.size() < 2) return;
+    cv::polylines(img, poly, false, cv::Scalar(0, 0, 0), 4, cv::LINE_AA);
+    cv::polylines(img, poly, false, color, 2, cv::LINE_AA);
+    cv::circle(img, poly.back(), 4, color, -1, cv::LINE_AA);
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%.2fm  %.0fms", cmd.distance, path.back().t * 1000);
+    text(img, buf, poly.back() + cv::Point(8, 16), color, 0.5);
+}
+
 void drawOverlay(cv::Mat& img, const FrameObservations& obs, const FrameLog& log, const RobotTracker& geom,
-                 const CameraModel& camera) {
+                 const CameraModel& camera, const Ballistics* ballistics) {
     // detections (green) with panel outline
     for (const auto& a : obs.armors) {
         std::vector<cv::Point> poly;
@@ -55,6 +79,7 @@ void drawOverlay(cv::Mat& img, const FrameObservations& obs, const FrameLog& log
         const cv::Vec3d c(x[RobotTracker::XC], x[RobotTracker::YC], x[RobotTracker::ZC]);
         if (camera.inFront(c)) cv::drawMarker(img, toPx(camera.project(c)), {0, 255, 255}, cv::MARKER_CROSS, 14, 2);
     }
+    if (ballistics) drawTrajectory(img, log.cmd, *ballistics, camera);
     if (log.cmd.valid && camera.inFront(log.cmd.aim_point)) {
         cv::circle(img, toPx(camera.project(log.cmd.aim_point)), 7,
                    log.cmd.center_mode ? cv::Scalar(255, 0, 255) : cv::Scalar(0, 0, 255), 2, cv::LINE_AA);

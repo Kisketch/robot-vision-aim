@@ -4,9 +4,12 @@
 // MCU -> vision (17 bytes):  AA BB [crc/pad] [yaw i32][pitch i32][roll i32] color buff
 //                            (bytes 0-1 header, 2 spare/CRC, 3-14 angles,
 //                             15 colour, 16 armor_or_buff; no tail byte)
-// vision -> MCU (21 bytes):  AA BB [yaw i32][pitch i32][yaw_vel i32][ui_x i32]
+// vision -> MCU (21 bytes):  AA BB [yaw i32][pitch i32][yaw_vel i32][distance_mm i32]
 //                            found fire BB   (bytes 2-17 payload, 18, 19, tail 20)
-// All integers are big-endian; angles are 1e-4 degrees.
+// All integers are big-endian; angles are 1e-4 degrees.  Bytes 14-17 were the
+// legacy "ui_y" slot, always sent as 0; they now carry the straight-line
+// distance to the aimed point in millimetres (0 = no target).  Frame length
+// and layout are unchanged, so firmware that ignores the slot keeps working.
 //
 // This header is deliberately free of OpenCV / vision includes so the MCU-side
 // tooling and the serial driver can use it on their own.
@@ -25,6 +28,7 @@ struct SerialCommand {
     int32_t yaw = 0;
     int32_t pitch = 0;
     int32_t yaw_vel = 0;
+    int32_t distance_mm = 0;  // |aim point| from the gimbal origin, mm; 0 when no target
     uint8_t found = 0;
     uint8_t fire = 0;
 };
@@ -60,8 +64,7 @@ bool parseAttitudeCrc(const uint8_t* data, std::size_t size, AttitudeFrame& out)
 // the format definition for the MCU side and for tests).
 std::array<uint8_t, kAttitudeSize> packAttitude(const AttitudeFrame& f, bool with_crc);
 
-// Pack a SerialCommand.  `ui_x` is the fourth int32 (the old yaw-rate/UI slot);
-// the MCU protocol only has four int32 payloads.
-std::array<uint8_t, kControlSize> packControl(const SerialCommand& cmd, int32_t ui_x = 0);
+// Pack a SerialCommand.  The fourth int32 payload is cmd.distance_mm.
+std::array<uint8_t, kControlSize> packControl(const SerialCommand& cmd);
 
 }  // namespace sentry

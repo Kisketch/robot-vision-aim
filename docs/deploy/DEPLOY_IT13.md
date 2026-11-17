@@ -140,8 +140,10 @@ BGR8_Packed / YUV422_Packed）内，否则**启动期报错**而不是采流后�
 
 - `--comp-yaw/--comp-pitch` 是旧仓 `Transmit.compensate_*` 的等价物；先 0，实测偏置后再加。
 - 程序内 `HoldFound 0.5 s`：目标短暂丢失时保持上一帧角度，但**不发火**。
-- 串口 21 B 帧：`AA BB [yaw][pitch][yaw_vel][ui_x] found fire BB`，
+- 串口 21 B 帧：`AA BB [yaw][pitch][yaw_vel][distance_mm] found fire BB`，
   yaw/pitch/yaw_vel 单位 1e-4 度，`found=1`，`fire=2` 表示开火。
+  byte 14–17 原为旧协议恒发 0 的 `ui_y` 槽，现填目标距离（mm，无目标为 0）；
+  帧长与布局不变，固件不读这个字段也不受影响。
 - 若 MCU 的 pitch 正负与视觉相反，在 `toSerial` 里对 pitch 取负，或在电控端处理；
   **不要**同时改两处。
 
