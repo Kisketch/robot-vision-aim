@@ -1,9 +1,9 @@
 %YAML:1.0
 ---
-# Sentry configuration for a 165 Hz camera with the measured latency chain.
+# Sentry configuration for a 165 Hz camera with the split latency chain.
 # Same tuning as sentry.yaml; differences:
 #   * aimer: latency split into transfer / process / comm / fire delays
-#     (values from the team's measurements, 2026-11-17 - see below);
+#     (team-reported values, 2026-11-17 - see below);
 #   * tracker / target: frame-count thresholds replaced by times, so they
 #     mean the same at 165 Hz as they did at 25 Hz;
 #   * eval: fps 165 and a shot-rate cap for meaningful hits/s.
@@ -138,7 +138,7 @@ aimer:
    latency: 0.0          # unmodelled remainder
    transfer_delay: 0.010
    process_delay: 0.005
-   comm_delay: 0.020     # 10-30 ms measured spread; recalibrate with --calib-delay + aim-offset trial
+   comm_delay: 0.020     # 10-30 ms team-reported range; recalibrate with --calib-delay + aim-offset trial
    fire_delay: 0.030
    side_angle_deg: 20.
    switch_hysteresis_deg: 3.
