@@ -66,16 +66,22 @@ SentryOutput SentryVision::process(const cv::Mat& bgr, double stamp, double gimb
     }
 
     std::vector<ArmorDetection> detections;
-    if (roi_enabled_ && !roi_windows_.empty() && frames_since_full_ < 30) {
+    // Full-scan period: 30 frames historically; target.roi_full_scan_period
+    // makes it a time (the same blind-spot bound at 25 or 165 fps).
+    const double period = cfg_.target.roi_full_scan_period;
+    const bool scan_due = period > 0 ? stamp - last_full_scan_stamp_ >= period : frames_since_full_ >= 30;
+    if (roi_enabled_ && !roi_windows_.empty() && !scan_due) {
         detections = detector_.detect(bgr, roi_windows_);
         ++frames_since_full_;
         if (detections.empty()) {  // target may have left the windows: rescan now
             detections = detector_.detect(bgr);
             frames_since_full_ = 0;
+            last_full_scan_stamp_ = stamp;
         }
     } else {
         detections = detector_.detect(bgr);
         frames_since_full_ = 0;
+        last_full_scan_stamp_ = stamp;
     }
     out.observations.armors = pose_.solveAll(detections);
 
@@ -88,11 +94,15 @@ SentryOutput SentryVision::process(const cv::Mat& bgr, double stamp, double gimb
         int active = 0;
         for (const auto& s : out.targets)
             if (s.valid && s.active()) ++active;
-        if (prev_active_tracks_ >= 0 && active < prev_active_tracks_) frames_since_full_ = 30;
+        if (prev_active_tracks_ >= 0 && active < prev_active_tracks_) {
+            frames_since_full_ = 30;
+            last_full_scan_stamp_ = -1e18;
+        }
         prev_active_tracks_ = active;
     }
     out.selected = manager_.select(out.targets);
-    if (out.selected >= 0) out.command = aimer_.aim(out.targets[out.selected], stamp);
+    if (host_clock_) out.measured_elapsed = host_clock_() - stamp;
+    if (out.selected >= 0) out.command = aimer_.aim(out.targets[out.selected], stamp, out.measured_elapsed);
     return out;
 }
 

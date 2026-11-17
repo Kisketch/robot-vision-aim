@@ -23,4 +23,12 @@ void drawOverlay(cv::Mat& img, const FrameObservations& obs, const FrameLog& log
 void drawTrajectory(cv::Mat& img, const AimCommand& cmd, const Ballistics& ballistics, const CameraModel& camera,
                     const cv::Scalar& color = cv::Scalar(0, 165, 255));
 
+// Side view of the same shot inside `box` (range to the right, height up;
+// height exaggerated up to 8x so a few cm of drop stay visible): the line of sight to the aim point, the
+// barrel direction, and the predicted drag trajectory bending down onto the
+// target - the parabola that the camera view (looking along the shot)
+// cannot show.  Labels: distance, drop compensation, flight time and the
+// latency + flight lead.  No-op for an invalid command.
+void drawTrajectorySideView(cv::Mat& img, const AimCommand& cmd, const Ballistics& ballistics, cv::Rect box);
+
 }  // namespace autoaim

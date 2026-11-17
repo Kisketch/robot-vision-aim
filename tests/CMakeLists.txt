@@ -1,4 +1,4 @@
-add_executable(autoaim_tests test_main.cpp test_detector.cpp test_pose.cpp
+add_executable(autoaim_tests test_main.cpp test_latency.cpp test_detector.cpp test_pose.cpp
                test_tracker.cpp test_aimer.cpp test_ballistics.cpp
                test_evaluation.cpp test_timing.cpp test_config.cpp)
 target_link_libraries(autoaim_tests PRIVATE autoaim_core)

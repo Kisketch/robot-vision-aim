@@ -40,6 +40,9 @@ void appendSentryStrategy(const Config& cfg, const std::vector<FrameObservations
     };
     const double scale = cfg.aimer.fire_tolerance_scale;
 
+    const double latency = cfg.aimer.totalLatency();
+    const double min_shot_gap = cfg.eval.max_shot_rate > 0 ? 1.0 / cfg.eval.max_shot_rate : 0.0;
+    double last_shot = -1e18;
     StrategyResult s_sentry;
     s_sentry.name = "sentry (multi-target + outpost)";
     for (const auto& f : obs) {
@@ -50,9 +53,12 @@ void appendSentryStrategy(const Config& cfg, const std::vector<FrameObservations
             const AimCommand c = sentry_aimer.aim(states[si], f.stamp);
             if (c.valid) {
                 g_sentry.step(c.yaw, c.pitch, dt);
-                if (c.fire && onTarget(g_sentry, c, states[si].type, scale))
-                    fireAndJudge(s_sentry, judge, g_sentry, c, states[si].id, f.frame,
-                                 cfg.aimer.latency, f.stamp, nullptr);
+                if (c.fire && onTarget(g_sentry, c, states[si].type, scale) &&
+                    f.stamp - last_shot >= min_shot_gap - 1e-9) {
+                    last_shot = f.stamp;
+                    fireAndJudge(s_sentry, judge, g_sentry, c, states[si].id, f.frame, latency, f.stamp,
+                                 nullptr);
+                }
             }
         }
     }

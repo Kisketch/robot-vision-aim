@@ -8,6 +8,14 @@
 // the tracker's state can be compared with the truth.
 //
 //   autoaim_sim [--config cfg.yaml] [--fps 25] [--noise 0.7] [--seconds 20]
+//               [--latency-error S] [--latency-jitter S]
+//
+// --latency-error / --latency-jitter model a latency chain the aimer does NOT
+// know exactly: every bullet really leaves the muzzle at
+//   stamp + aimer.totalLatency() + error + U(-jitter, +jitter)
+// while the aimer predicted for stamp + totalLatency().  Default 0 / 0 (the
+// historical, perfectly known latency).  Use them to see what a mis-measured
+// or jittery serial/MCU/fire chain costs.
 #include <opencv2/core.hpp>
 
 #include <cmath>
@@ -72,18 +80,21 @@ Light lightFrom(const cv::Point2f& top, const cv::Point2f& bottom) {
 int main(int argc, char** argv) {
     std::string config_path = std::string(AUTOAIM_ROOT) + "/config/default.yaml";
     double fps = 25, noise = 0.7, seconds = 20, dropout = 0.05;
+    double latency_error = 0.0, latency_jitter = 0.0;
     int seed = 0;
     std::vector<std::pair<std::string, double>> sets;
     for (int i = 1; i < argc; ++i)
         if (std::string(argv[i]) == "--help" || std::string(argv[i]) == "-h") {
             std::printf("usage: autoaim_sim [--config f.yaml] [--fps n] [--noise px] "
-                        "[--seconds s] [--dropout f] [--seed n] [--set k=v]...\n");
+                        "[--seconds s] [--dropout f] [--seed n] [--latency-error s] [--latency-jitter s] "
+                        "[--set k=v]...\n");
             return 0;
         }
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a == "--config" || a == "--fps" || a == "--noise" || a == "--seconds" ||
-            a == "--dropout" || a == "--seed" || a == "--set") {
+            a == "--dropout" || a == "--seed" || a == "--set" || a == "--latency-error" ||
+            a == "--latency-jitter") {
             if (i + 1 >= argc) {
                 std::cerr << "missing value for " << a << " (try --help)\n";
                 return 1;
@@ -95,6 +106,8 @@ int main(int argc, char** argv) {
         else if (a == "--seconds") seconds = std::stod(argv[++i]);
         else if (a == "--dropout") dropout = std::stod(argv[++i]);
         else if (a == "--seed") seed = std::stoi(argv[++i]);
+        else if (a == "--latency-error") latency_error = std::stod(argv[++i]);
+        else if (a == "--latency-jitter") latency_jitter = std::abs(std::stod(argv[++i]));
         else if (a == "--set") {
             const std::string kv = argv[++i];
             const auto eq = kv.find('=');
@@ -150,8 +163,11 @@ int main(int argc, char** argv) {
 
     std::printf("fps %.0f, corner noise %.2f px, dropout %.0f%%, %.0f s per scenario, fx %.0f, latency %.0f ms, "
                 "bullet %.0f m/s, seed %d\n\n",
-                fps, noise, dropout * 100, seconds, cfg.camera.fx, cfg.aimer.latency * 1000,
+                fps, noise, dropout * 100, seconds, cfg.camera.fx, cfg.aimer.totalLatency() * 1000,
                 cfg.ballistic.bullet_speed, 42 + seed);
+    if (latency_error != 0.0 || latency_jitter > 0.0)
+        std::printf("true latency = model %+.0f ms, jitter +-%.0f ms (aimer does not know)\n\n",
+                    latency_error * 1000, latency_jitter * 1000);
     std::printf("| scenario | direct hit%% | point KF hit%% | robot EKF hit%% | robot hits/s | centre err cm | "
                 "|w| err rad/s | radius err cm | tracking %% |\n|---|---|---|---|---|---|---|---|---|\n");
 
@@ -195,9 +211,13 @@ int main(int argc, char** argv) {
         }
 
         // ground-truth judge: fly the bullet, test it against the true plates
+        std::mt19937 lat_rng(1000 + static_cast<unsigned>(seed));
+        std::uniform_real_distribution<double> lat_jit(-latency_jitter, latency_jitter);
         const JudgeFn judge = [&](double t_depart, double yaw, double pitch, double t_fly_hint,
                                   const std::string&, ShotRecord& rec) {
             rec.result = ShotResult::MISS;
+            // the real chain: the bullet leaves when it really leaves
+            if (latency_error != 0.0 || latency_jitter > 0.0) t_depart += latency_error + lat_jit(lat_rng);
             for (int k = 0; k < 4; ++k) {
                 double T = t_depart + t_fly_hint, ayaw = 0, h = 0, tb = 0;
                 cv::Vec3d p;

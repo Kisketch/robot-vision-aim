@@ -2,6 +2,7 @@ build/
 out/
 out_*/
 runs/
+video/
 *.o
 *.a
 *.so

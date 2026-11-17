@@ -90,6 +90,26 @@
 | `width` | 0 |
 | `yaw_search_range_deg` | 85 |
 
+## 2026-11-17 新增：延迟链与帧率无关门限
+
+均默认 0 = 历史行为（冻结基线不变）；165 Hz 取值见 `sentry/config/sentry_165hz.yaml`，
+设计与推演见 [`docs/studies/latency_chain_165hz.md`](studies/latency_chain_165hz.md)。
+
+| 参数 | 节 | 默认 | 165 Hz 配置 | `--set` |
+| --- | --- | ---: | ---: | --- |
+| `transfer_delay` | aimer | 0 | 0.010 | ✓ |
+| `process_delay` | aimer | 0 | 0.005（上车被每帧实测取代） | ✓ |
+| `comm_delay` | aimer | 0 | 0.020 | ✓ |
+| `fire_delay` | aimer | 0 | 0.030 | ✓ |
+| `gimbal_lag` | aimer | 0 | 0（真实视频否决，待上车实测） | ✓ |
+| `warmup_time` | aimer | 0 | 0 | ✓ |
+| `tracking_thres_time` | tracker | 0 | 0.08 | ✓ |
+| `lost_grace_time` | tracker | 0 | 0.02 | ✓ |
+| `roi_full_scan_period` | target | 0 | 0.2 | ✗ |
+| `max_shot_rate` | eval | 0 | 20 | ✓ |
+
+`latency` 的含义改为“未建模的剩余延迟”：总提前量 = `latency + transfer + process + comm + fire`。
+
 ## 结论
 
 - 所有影响命中率的连续参数（噪声、开火、滞回、阈值）都可 `--set`，所以自动扫描不会漏项。

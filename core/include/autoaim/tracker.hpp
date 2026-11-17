@@ -64,6 +64,10 @@ public:
     const std::string& id() const { return id_; }
     int armorsNum() const { return cfg_.armors_num; }
     int trackingFrames() const { return tracking_frames_; }
+    // Seconds spent in TRACKING since the last (re)acquisition, measured at
+    // the last update (0 when not tracking).  Frame-rate independent twin of
+    // trackingFrames(), used by AimerConfig::warmup_time.
+    double trackingTime() const { return state_ == TrackState::TRACKING ? stamp_ - tracking_since_ : 0.0; }
 
     // State extrapolated to time t (constant velocity / constant angular velocity).
     Vec predict(double t) const;
@@ -119,6 +123,8 @@ private:
     int detect_count_ = 0;
     int unmatched_with_target_ = 0;
     int unmatched_run_ = 0;  // consecutive unmatched frames inside TRACKING
+    double detect_since_ = 0;    // stamp the current DETECTING phase began
+    double tracking_since_ = 0;  // stamp the current TRACKING phase began
     double nis_ema_ = 3.0;
     int tracking_frames_ = 0;
     double q_scale_ = 1.0;
@@ -186,6 +192,7 @@ private:
     double last_match_stamp_ = 0;
     std::string id_ = "outpost";
     int detect_count_ = 0;
+    double detect_since_ = 0;
     int unmatched_with_target_ = 0;
     double nis_ema_ = 3.0;
     double q_scale_ = 1.0;

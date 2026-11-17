@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="380" viewBox="0 0 900 380" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+<rect width="900" height="380" fill="#0f172a"/>
+<text x="24" y="30" font-size="17" font-weight="bold" fill="#e2e8f0">25 Hz vs 165 Hz：各仿真场景命中率（robot EKF，真值）</text>
+<text x="24" y="50" font-size="11.5" fill="#94a3b8">165 Hz 配置：延迟链 65 ms、按时间计的门限、射频上限 20 发/s；同机同种子</text>
+<line x1="70" y1="300" x2="890" y2="300" stroke="#1e293b"/>
+<text x="64" y="304" font-size="10.5" text-anchor="end" fill="#94a3b8">0%</text>
+<line x1="70" y1="242" x2="890" y2="242" stroke="#1e293b"/>
+<text x="64" y="246" font-size="10.5" text-anchor="end" fill="#94a3b8">25%</text>
+<line x1="70" y1="185" x2="890" y2="185" stroke="#1e293b"/>
+<text x="64" y="189" font-size="10.5" text-anchor="end" fill="#94a3b8">50%</text>
+<line x1="70" y1="128" x2="890" y2="128" stroke="#1e293b"/>
+<text x="64" y="132" font-size="10.5" text-anchor="end" fill="#94a3b8">75%</text>
+<line x1="70" y1="70" x2="890" y2="70" stroke="#1e293b"/>
+<text x="64" y="74" font-size="10.5" text-anchor="end" fill="#94a3b8">100%</text>
+<rect x="82.8" y="70.0" width="23.1" height="230.0" fill="#64748b"/>
+<rect x="108.4" y="70.0" width="23.1" height="230.0" fill="#14b8a6"/>
+<rect x="134.1" y="70.0" width="23.1" height="230.0" fill="#3b82f6"/>
+<text x="121" y="316" font-size="10.5" text-anchor="middle" fill="#94a3b8">2.1 rad/s</text>
+<rect x="185.3" y="195.6" width="23.1" height="104.4" fill="#64748b"/>
+<rect x="210.9" y="182.0" width="23.1" height="118.0" fill="#14b8a6"/>
+<rect x="236.6" y="185.7" width="23.1" height="114.3" fill="#3b82f6"/>
+<text x="224" y="316" font-size="10.5" text-anchor="middle" fill="#94a3b8">6 rad/s+横移</text>
+<rect x="287.8" y="70.0" width="23.1" height="230.0" fill="#64748b"/>
+<rect x="313.4" y="70.0" width="23.1" height="230.0" fill="#14b8a6"/>
+<rect x="339.1" y="72.5" width="23.1" height="227.5" fill="#3b82f6"/>
+<text x="326" y="316" font-size="10.5" text-anchor="middle" fill="#94a3b8">10 rad/s</text>
+<rect x="390.3" y="262.5" width="23.1" height="37.5" fill="#64748b"/>
+<rect x="415.9" y="251.2" width="23.1" height="48.8" fill="#14b8a6"/>
+<rect x="441.6" y="251.2" width="23.1" height="48.8" fill="#3b82f6"/>
+<text x="429" y="316" font-size="10.5" text-anchor="middle" fill="#94a3b8">强横移</text>
+<rect x="492.8" y="72.5" width="23.1" height="227.5" fill="#64748b"/>
+<rect x="518.4" y="70.0" width="23.1" height="230.0" fill="#14b8a6"/>
+<rect x="544.1" y="70.0" width="23.1" height="230.0" fill="#3b82f6"/>
+<text x="531" y="316" font-size="10.5" text-anchor="middle" fill="#94a3b8">接近 7→3 m</text>
+<rect x="595.3" y="91.6" width="23.1" height="208.4" fill="#64748b"/>
+<rect x="620.9" y="99.9" width="23.1" height="200.1" fill="#14b8a6"/>
+<rect x="646.6" y="102.0" width="23.1" height="198.0" fill="#3b82f6"/>
+<text x="634" y="316" font-size="10.5" text-anchor="middle" fill="#94a3b8">变速</text>
+<rect x="697.8" y="76.7" width="23.1" height="223.3" fill="#64748b"/>
+<rect x="723.4" y="89.5" width="23.1" height="210.5" fill="#14b8a6"/>
+<rect x="749.1" y="93.5" width="23.1" height="206.5" fill="#3b82f6"/>
+<text x="736" y="316" font-size="10.5" text-anchor="middle" fill="#94a3b8">摇摆</text>
+<rect x="800.3" y="155.1" width="23.1" height="144.9" fill="#64748b"/>
+<rect x="825.9" y="161.5" width="23.1" height="138.5" fill="#14b8a6"/>
+<rect x="851.6" y="158.1" width="23.1" height="141.9" fill="#3b82f6"/>
+<text x="839" y="316" font-size="10.5" text-anchor="middle" fill="#94a3b8">3 rad/s+轻横移</text>
+<rect x="70" y="346" width="12" height="12" fill="#64748b"/>
+<text x="88" y="356" font-size="11" fill="#e2e8f0">25 Hz (sentry.yaml, lumped 60 ms): 平均 76.4%</text>
+<rect x="340" y="346" width="12" height="12" fill="#14b8a6"/>
+<text x="358" y="356" font-size="11" fill="#e2e8f0">165 Hz (sentry_165hz.yaml): 平均 76.4%</text>
+<rect x="610" y="346" width="12" height="12" fill="#3b82f6"/>
+<text x="628" y="356" font-size="11" fill="#e2e8f0">165 Hz + 10 ms jitter: 平均 75.9%</text>
+</svg>

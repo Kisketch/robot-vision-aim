@@ -4,6 +4,7 @@
 
 #include <opencv2/core.hpp>
 
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -105,12 +106,20 @@ struct TrackerConfig {
     double max_match_distance = 0.35; // m, association gate
     double max_match_yaw_diff = 1.0;  // rad
     int tracking_thres = 3;           // consecutive matches DETECTING -> TRACKING
+    // Frame-rate independent alternative to tracking_thres: stay in DETECTING
+    // until matches have covered this many seconds (and at least
+    // tracking_thres frames).  0 = frame count only (historical).  At 165 Hz
+    // three frames are 18 ms - too little evidence to start firing on.
+    double tracking_thres_time = 0.0;
     double lost_time_thres = 0.4;     // s in TEMP_LOST before LOST
     // Consecutive unmatched frames that still count as TRACKING. A single-frame
     // detection dropout (glow, occlusion, a corner the classifier rejects) says
     // nothing about the target, but it used to demote the track, which stops
     // firing and resets every warm-up counter. 0 = the historical behaviour.
     int lost_grace_frames = 0;
+    // Same grace in seconds (> 0 overrides lost_grace_frames): a dropout of a
+    // given duration is what matters, not how many frames it spans.
+    double lost_grace_time = 0.0;
     // process noise (continuous white-noise acceleration spectral densities)
     double q_xyz = 4.0;
     double q_yaw = 30.0;
@@ -171,6 +180,9 @@ struct TargetConfig {
     bool require_tracking = true;   // only aim at TRACKING targets
     // Earlier entries win.  Empty means "closest target".
     std::vector<std::string> priority = {"outpost", "1", "2", "3", "4", "guard", "base"};
+    // ROI mode: force a full-frame scan at least this often (seconds).
+    // 0 = every 30 frames (historical; 1.2 s at 25 fps, 0.18 s at 165 fps).
+    double roi_full_scan_period = 0.0;
 };
 
 struct BallisticConfig {
@@ -195,7 +207,37 @@ struct BallisticConfig {
 };
 
 struct AimerConfig {
-    double latency = 0.06;           // s, capture -> bullet leaves the barrel
+    // ---- Latency chain: exposure centre -> bullet leaves the muzzle ----
+    // The aim point is predicted at  stamp + totalLatency() + t_fly.
+    // `latency` is the historical lumped value; the four components below
+    // split it up so each can be measured / calibrated on its own.  They all
+    // default to 0, so a config that only sets `latency` behaves exactly as
+    // before (frozen baselines unchanged).  A config that uses the chain sets
+    // `latency` to the unmodelled remainder (usually 0).
+    double latency = 0.06;           // s, lumped / unmodelled remainder
+    double transfer_delay = 0.0;     // s, exposure centre -> frame in host memory (readout + USB)
+    double process_delay = 0.0;      // s, frame in memory -> command written to the serial port
+    double comm_delay = 0.0;         // s, serial transmission + MCU control loop -> gimbal acts on it
+    double fire_delay = 0.0;         // s, fire flag -> bullet leaves the muzzle (trigger / feeder)
+    // Gimbal response lag (s): a position-controlled gimbal follows a moving
+    // command with a steady lag (~ its time constant for a first-order loop),
+    // so the barrel points where the command was gimbal_lag ago.  The aimer
+    // predicts this much further ahead to cancel it.  It is NOT part of the
+    // bullet's departure time (totalLatency).  0 = historical (no compensation).
+    // With MCU-side yaw-rate feedforward (yaw_vel in the serial frame) the lag
+    // shrinks; re-measure it then.
+    double gimbal_lag = 0.0;
+    double totalLatency() const {
+        return latency + transfer_delay + process_delay + comm_delay + fire_delay;
+    }
+    // Same chain with a measured "exposure -> now" interval replacing the
+    // modelled transfer + processing part (the on-robot program measures it
+    // on every frame, since processing time varies frame to frame).  A
+    // negative or non-finite value means "not measured": the model is used.
+    double totalLatency(double measured_elapsed) const {
+        if (!(measured_elapsed >= 0.0) || !std::isfinite(measured_elapsed)) return totalLatency();
+        return latency + measured_elapsed + comm_delay + fire_delay;
+    }
     // Fixed aim offsets (deg) added to every command: the mechanical zero
     // error between the camera/gimbal frame and the barrel. The legacy
     // on-robot code carried measured values (yaw +0.5, pitch -0.5) in its
@@ -222,6 +264,9 @@ struct AimerConfig {
     double gimbal_max_rate = 12.0;
     // Do not fire during the first N frames after (re)acquiring TRACKING.
     int warmup_frames = 0;       // frames since (re)acquiring TRACKING
+    // Same gate in seconds (frame-rate independent; > 0 overrides warmup_frames).
+    // At 165 Hz a frame count means 6 ms per frame instead of 40 ms.
+    double warmup_time = 0.0;
     // Velocity feedforward into the simulated gimbal (0 = pure P lag).
     // Models a real gimbal that also receives the commanded yaw rate.
     double gimbal_ff = 0.0;
@@ -229,6 +274,10 @@ struct AimerConfig {
 
 struct EvalConfig {
     double fps = 25.0;
+    // Upper bound on simulated shots per second (0 = one shot per fire frame,
+    // historical).  The evaluator otherwise fires on every frame, which at a
+    // 165 Hz camera means an impossible 165 shots/s and meaningless hits/s.
+    double max_shot_rate = 0.0;
     std::vector<double> horizons = {0.12, 0.20, 0.32};  // s, prediction-error horizons
 };
 

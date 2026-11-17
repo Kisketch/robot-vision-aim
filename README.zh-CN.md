@@ -638,6 +638,9 @@ cmake --build build -j"$(nproc)"
   [`docs/INDEX.md`](docs/INDEX.md) — 整棵树逐文件的带注索引。
 - [`docs/studies/split_light_merge.md`](docs/studies/split_light_merge.md) —
   过曝灯条修复：诊断过程、被否决的第一版、各配置下的 A/B 数字。
+- [`docs/studies/latency_chain_165hz.md`](docs/studies/latency_chain_165hz.md) —
+  延迟链拆分（传输/处理/串口+MCU/发射，上车每帧实测）、165 Hz 适配、延迟估错的代价，
+  以及侧视抛物线弹道演示图。
 - [`docs/calibration/camera_hardware.md`](docs/calibration/camera_hardware.md) — 队伍实际使用的相机
   （海康 MVS 主相机、两台 720p 全向相机）：帧率、曝光、像素格式，以及 USB 带宽注意事项。
 - [`docs/project/pipeline_and_tuning.md`](docs/project/pipeline_and_tuning.md) — 完整的调参

@@ -115,6 +115,10 @@ PY
 ./build/sentry/sentry_robot --mvs --serial /dev/ttyACM0 \
   --config sentry/config/sentry.yaml --comp-yaw 0 --comp-pitch 0
 
+# 165 Hz 相机 + 延迟链配置（每帧实测“曝光→瞄准”，见 docs/studies/latency_chain_165hz.md）
+./build/sentry/sentry_robot --mvs --serial /dev/ttyACM0 \
+  --config sentry/config/sentry_165hz.yaml --comp-yaw 0 --comp-pitch 0
+
 # 用录好的视频回放，不带串口
 ./build/sentry/sentry_robot --video ~/video/3.avi --serial "" --config sentry/config/sentry.yaml
 ```

@@ -258,6 +258,18 @@ double median(std::vector<double> v) {
     return v[v.size() / 2];
 }
 
+// eval.max_shot_rate: at most one shot per 1/rate seconds per strategy.
+struct ShotGate {
+    double rate = 0.0;
+    double last = -1e18;
+    bool allow(double t) {
+        if (rate <= 0) return true;
+        if (t - last < 1.0 / rate - 1e-9) return false;
+        last = t;
+        return true;
+    }
+};
+
 void fireAndJudge(StrategyResult& sr, const JudgeFn& judge, const GimbalSim& g, const AimCommand& cmd,
                   const std::string& id, int frame, double latency, double stamp, ShotRecord* out) {
     ShotRecord rec;
@@ -305,6 +317,9 @@ EvalResult evaluate(const Config& cfg, const std::vector<FrameObservations>& obs
     int tracking_frames = 0, frames_with_armor = 0;
     const double scale = cfg.aimer.fire_tolerance_scale;
     double prev_stamp = obs.empty() ? 0.0 : obs.front().stamp;
+    const double latency = cfg.aimer.totalLatency();
+    ShotGate gate_direct{cfg.eval.max_shot_rate}, gate_point{cfg.eval.max_shot_rate},
+        gate_robot{cfg.eval.max_shot_rate}, gate_oracle{cfg.eval.max_shot_rate};
 
     for (std::size_t n = 0; n < obs.size(); ++n) {
         const auto& f = obs[n];
@@ -329,9 +344,9 @@ EvalResult evaluate(const Config& cfg, const std::vector<FrameObservations>& obs
             if (c.valid) {
                 g_direct.step(c.yaw, c.pitch, dt);
                 const int idx = chooseInitialTarget(f.armors);
-                if (c.fire && onTarget(g_direct, c, f.armors[idx].det.type, scale))
+                if (c.fire && onTarget(g_direct, c, f.armors[idx].det.type, scale) && gate_direct.allow(f.stamp))
                     fireAndJudge(s_direct, judge, g_direct, c, deviceId(f.armors[idx].det), f.frame,
-                                 cfg.aimer.latency, f.stamp, nullptr);
+                                 latency, f.stamp, nullptr);
             }
         }
         // --- point KF
@@ -339,8 +354,8 @@ EvalResult evaluate(const Config& cfg, const std::vector<FrameObservations>& obs
             const AimCommand c = point_aimer.aim(point, f.stamp);
             if (c.valid) {
                 g_point.step(c.yaw, c.pitch, dt);
-                if (c.fire && onTarget(g_point, c, point.armor_type, scale))
-                    fireAndJudge(s_point, judge, g_point, c, point.id(), f.frame, cfg.aimer.latency, f.stamp,
+                if (c.fire && onTarget(g_point, c, point.armor_type, scale) && gate_point.allow(f.stamp))
+                    fireAndJudge(s_point, judge, g_point, c, point.id(), f.frame, latency, f.stamp,
                                  nullptr);
             }
         }
@@ -367,8 +382,8 @@ EvalResult evaluate(const Config& cfg, const std::vector<FrameObservations>& obs
                         dmin = std::min(dmin, cv::norm(aim_px - cv::Point2d(a.det.center)));
                     log.aim_err_px = dmin;
                 }
-                if (c.fire && onTarget(g_robot, c, robot.armor_type, scale)) {
-                    fireAndJudge(s_robot, judge, g_robot, c, robot.id(), f.frame, cfg.aimer.latency, f.stamp,
+                if (c.fire && onTarget(g_robot, c, robot.armor_type, scale) && gate_robot.allow(f.stamp)) {
+                    fireAndJudge(s_robot, judge, g_robot, c, robot.id(), f.frame, latency, f.stamp,
                                  &log.shot_rec);
                     log.shot = true;
                     if (aim_px.x >= 0 && log.shot_rec.result != ShotResult::UNKNOWN)
@@ -382,7 +397,7 @@ EvalResult evaluate(const Config& cfg, const std::vector<FrameObservations>& obs
             AimCommand c;
             std::vector<ArmorObservation> plates;
             for (int it = 0; it < 3; ++it) {
-                if (!video_judge.platesAt(f.stamp + cfg.aimer.latency + oracle_tf, "", plates) || plates.empty())
+                if (!video_judge.platesAt(f.stamp + latency + oracle_tf, "", plates) || plates.empty())
                     break;
                 const ArmorObservation* best = nullptr;
                 double best_w = -1;
@@ -404,8 +419,8 @@ EvalResult evaluate(const Config& cfg, const std::vector<FrameObservations>& obs
             }
             if (c.valid) {
                 g_oracle.step(c.yaw, c.pitch, dt);
-                if (onTarget(g_oracle, c, ArmorType::SMALL, scale))
-                    fireAndJudge(s_oracle, judge, g_oracle, c, "", f.frame, cfg.aimer.latency, f.stamp, nullptr);
+                if (onTarget(g_oracle, c, ArmorType::SMALL, scale) && gate_oracle.allow(f.stamp))
+                    fireAndJudge(s_oracle, judge, g_oracle, c, "", f.frame, latency, f.stamp, nullptr);
             }
         }
 
