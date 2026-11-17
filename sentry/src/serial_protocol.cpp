@@ -74,17 +74,18 @@ std::array<uint8_t, kAttitudeSize> packAttitude(const AttitudeFrame& f, bool wit
     return b;
 }
 
-// 21-byte control frame: AA BB [yaw][pitch][yaw_vel][ui_x] found fire BB
-// The old AutoArmor::Transmit put the yaw rate into the ui_x slot; keeping that
-// mapping means the MCU does not need a new parser.
-std::array<uint8_t, kControlSize> packControl(const SerialCommand& cmd, int32_t ui_x) {
+// 21-byte control frame: AA BB [yaw][pitch][yaw_vel][distance_mm] found fire BB
+// The old AutoArmor::Transmit put the yaw rate into the ui_x slot and 0 into
+// ui_y; the yaw rate keeps its slot and distance_mm takes the unused ui_y one,
+// so the MCU does not need a new parser.
+std::array<uint8_t, kControlSize> packControl(const SerialCommand& cmd) {
     std::array<uint8_t, kControlSize> b{};
     b[0] = 0xAA;
     b[1] = 0xBB;
     writeI32(b.data() + 2, cmd.yaw);
     writeI32(b.data() + 6, cmd.pitch);
     writeI32(b.data() + 10, cmd.yaw_vel);
-    writeI32(b.data() + 14, ui_x);
+    writeI32(b.data() + 14, cmd.distance_mm);
     b[18] = cmd.found;
     b[19] = cmd.fire;
     b[20] = 0xBB;

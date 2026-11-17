@@ -37,6 +37,9 @@ void testPoseBufferExtrapolation();
 void testPoseBufferNonFinite();
 void testDelayCalibration();
 void testConfigTuningRoundTrip();
+void testLatencyChain();
+void testTimeBasedThresholds();
+void testShotRateCap();
 
 int main() {
     testDetectorDegenerateInputs();
@@ -67,6 +70,9 @@ int main() {
     testPoseBufferNonFinite();
     testDelayCalibration();
     testConfigTuningRoundTrip();
+    testLatencyChain();
+    testTimeBasedThresholds();
+    testShotRateCap();
     if (test_failures == 0) std::printf("ALL TESTS PASSED\n");
     return test_failures == 0 ? 0 : 1;
 }

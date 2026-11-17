@@ -34,6 +34,7 @@ struct AimCommand {
     cv::Vec3d aim_point{0, 0, 0};
     double t_fly = 0;
     double t_impact = 0;        // absolute time
+    double latency = 0;         // s, exposure -> muzzle exit used for this command (t_impact - t_fly - now)
     int armor_k = -1;
     double facing_deg = 0;
     double distance = 0;
@@ -77,7 +78,9 @@ public:
     RobotAimer(const AimerConfig& cfg, const Ballistics& ballistics) : cfg_(cfg), ball_(ballistics) {}
     AimCommand aim(const RobotTracker& tracker, double now);
     // Tracker-independent interface used by the sentry pipeline and the outpost.
-    AimCommand aim(const TargetState& target, double now);
+    // measured_elapsed >= 0 is the measured exposure -> now interval; it
+    // replaces the modelled transfer + process delays (AimerConfig::totalLatency).
+    AimCommand aim(const TargetState& target, double now, double measured_elapsed = -1.0);
     int selectArmor(const TargetState& target, double t, int previous, double& facing) const;
 
 private:

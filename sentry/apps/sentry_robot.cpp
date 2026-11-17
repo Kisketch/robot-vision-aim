@@ -118,6 +118,11 @@ int main(int argc, char** argv) {
     }
     sentry::SentryVision vision(cfg);
     if (roi) vision.setRoiEnabled(true);
+    // Live camera: stamps are steady-clock exposure times, so the real
+    // exposure -> aim interval can be measured on every frame and replaces
+    // the configured transfer_delay + process_delay.  Video replay uses media
+    // time, where "now - stamp" is meaningless: keep the configured model.
+    if (video.empty()) vision.setHostClock(nowSeconds);
 
     std::unique_ptr<autoaim::CameraSource> source;
     try {
@@ -255,6 +260,15 @@ int main(int argc, char** argv) {
             if (out.command.valid) {
                 const auto center = vision.camera().project(out.targets[out.selected].centerAt(stamp));
                 cv::drawMarker(frame, center, cv::Scalar(0, 255, 255), cv::MARKER_CROSS, 18, 2);
+                const auto& ac = cfg.aimer;
+                cv::putText(frame,
+                            out.measured_elapsed >= 0
+                                ? cv::format("latency %.0f ms = exposure->aim %.1f (measured) + comm %.0f + fire %.0f",
+                                             out.command.latency * 1000, out.measured_elapsed * 1000,
+                                             ac.comm_delay * 1000, ac.fire_delay * 1000)
+                                : cv::format("latency %.0f ms (model)  t_fly %.0f ms", out.command.latency * 1000,
+                                             out.command.t_fly * 1000),
+                            cv::Point(20, 70), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 165, 255), 2);
                 cv::putText(frame,
                             cv::format("%s %s yaw %.1f pitch %.1f %s", out.targets[out.selected].label.c_str(),
                                        autoaim::toString(out.targets[out.selected].state),

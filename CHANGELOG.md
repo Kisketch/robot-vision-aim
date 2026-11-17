@@ -4,6 +4,42 @@
 > 合并后也记录全仓级变更，但不追求完整——全仓变更以 git 提交历史与
 > docs/ 下各轮审查文档（如 docs/reviews/engineering_review_r6.md）为准。
 
+## 2026-11-17 — 延迟链拆分、165 Hz 适配、原理图
+
+详见 [latency_chain_165hz](docs/studies/latency_chain_165hz.md)。
+- **延迟链**：`AimerConfig` 增 `transfer_delay / process_delay / comm_delay / fire_delay`，
+  `totalLatency()` = `latency`（改为未建模剩余）+ 四段；所有瞄准器与评测器改用总延迟。
+  `RobotAimer::aim(target, now, measured_elapsed)`：上车时 `SentryVision::setHostClock`
+  每帧实测“曝光→瞄准”，取代传输+处理两段模型值；`AimCommand::latency` 记录实际所用。
+- **165 Hz**：`tracking_thres_time`、`lost_grace_time`、`warmup_time`、
+  `target.roi_full_scan_period` 为帧数门限的按时间版本；`eval.max_shot_rate` 限制评测射速；
+  新增 `sentry/config/sentry_165hz.yaml`（队伍给的延迟数值，方法/原始数据待补，不回写出厂配置）。
+- **仿真**：`autoaim_sim --latency-error / --latency-jitter` 模拟瞄准器不知道的真实延迟偏差；
+  `tools/latency_study.py` 生成推演数据与 3 张图。
+- **`aimer.gimbal_lag`**（云台响应滞后补偿）：仿真 +1 pp，但真实视频 4.avi 68.6% → 56.3%（40 ms），
+  默认 0、不出厂，待上车实测。
+- **显示**：overlay 状态行显示“出膛前延迟 + 飞行时间”；`sentry_robot` 调试窗口显示延迟分解。
+- **原理图**：`docs/diagrams/aim_timing_principle.svg`（延迟计算 → 整车 EKF 预测 → 飞行时间迭代 →
+  选板/开火 → 串口），由 `tools/make_diagrams.py` 生成。
+- **抛物线轨迹预测移出主线**：弹道采样、画面弹道曲线、侧视抛物线小窗与效果图挪到
+  `feat/parabola-prediction` 分支；弹道解算本身（仰角、飞行时间）不受影响。
+- **数据来源标注**：165 Hz 结论全部来自仿真（仓库真实视频为 25 fps），已在研究文档、图表标题、
+  原理图、`sentry_165hz.yaml`、BASELINE.md 与中英文 README 中逐处标明；165 Hz 实拍录像待队伍提供。
+- 验证：构建 0 警告；ctest 5/5（新增 test_latency.cpp：延迟链、实测替换、按时间门限、射速上限）；
+  默认配置下 `autoaim_sim` 输出逐字节不变；视频门禁两套配置 12 项偏差全 0.0。
+  仿真门禁在本机未改代码时即为 73.6（机器漂移，需 `--sim-ref 73.6`）。
+
+## 2026-11-17 — 目标距离下发 MCU
+
+- **距离下发**：`SerialCommand` 增 `distance_mm`，`toSerial()` 由
+  `AimCommand::distance` 填入（钳在 0–100 m，非有限值记 0），`packControl()`
+  写入 21 B 指令帧 byte 14–17（旧协议恒为 0 的 `ui_y` 槽）。帧长、布局不变；
+  `packControl` 去掉了原先未被使用的第二个参数。MCU 端要使用距离需固件读取该槽。
+- **装甲尺寸不变**：小装甲仍用 0.135×0.055 m（新检测器板面角点定义）；
+  0.130×0.050 m 是旧代码灯条端点定义，不混用。
+- 验证：构建 0 警告；ctest 5/5（新增距离字段测试）；`autoaim_sim`
+  输出与改动前逐字节一致（瞄准/弹道解算路径未改动）。
+
 ## 2026-11-14 — MVS 像素格式启动期固定 + 硬件集成前深度复检
 
 - **M1 修复**（[deep_recheck](docs/reviews/deep_recheck_2026-11-14.md)）：

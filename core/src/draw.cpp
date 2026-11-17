@@ -76,9 +76,9 @@ void drawOverlay(cv::Mat& img, const FrameObservations& obs, const FrameLog& log
         text(img, buf, {10, 50}, {255, 255, 0});
     }
     if (log.cmd.valid) {
-        std::snprintf(buf, sizeof(buf), "%s  yaw %+.2f pitch %+.2f deg  t_fly %.0f ms  facing %+.0f  %s",
+        std::snprintf(buf, sizeof(buf), "%s  yaw %+.2f pitch %+.2f deg  lead %.0f+%.0f ms  facing %+.0f  %s",
                       log.cmd.center_mode ? "CENTER" : "ARMOR", log.cmd.yaw * 180 / kPi, log.cmd.pitch * 180 / kPi,
-                      log.cmd.t_fly * 1000, log.cmd.facing_deg,
+                      log.cmd.latency * 1000, log.cmd.t_fly * 1000, log.cmd.facing_deg,
                       log.shot ? (log.shot_rec.result == ShotResult::HIT
                                       ? "FIRE: HIT"
                                       : (log.shot_rec.result == ShotResult::MISS ? "FIRE: MISS" : "FIRE: ?"))

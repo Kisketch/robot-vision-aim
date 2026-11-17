@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="360" viewBox="0 0 900 360" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+<rect width="900" height="360" fill="#0f172a"/>
+<text x="24" y="30" font-size="17" font-weight="bold" fill="#e2e8f0">延迟估错的代价〔仿真推演 165 Hz，非实拍〕</text>
+<text x="24" y="50" font-size="11.5" fill="#94a3b8">横轴：真实出膛时刻 − 模型时刻；实线 = 10 rad/s 快速小陀螺，虚线 = 8 场景平均；橙 = 无抖动，蓝 = ±10 ms 抖动</text>
+<line x1="70" y1="310" x2="860" y2="310" stroke="#1e293b"/>
+<text x="64" y="314" font-size="10.5" text-anchor="end" fill="#94a3b8">40%</text>
+<line x1="70" y1="270" x2="860" y2="270" stroke="#1e293b"/>
+<text x="64" y="274" font-size="10.5" text-anchor="end" fill="#94a3b8">50%</text>
+<line x1="70" y1="230" x2="860" y2="230" stroke="#1e293b"/>
+<text x="64" y="234" font-size="10.5" text-anchor="end" fill="#94a3b8">60%</text>
+<line x1="70" y1="190" x2="860" y2="190" stroke="#1e293b"/>
+<text x="64" y="194" font-size="10.5" text-anchor="end" fill="#94a3b8">70%</text>
+<line x1="70" y1="150" x2="860" y2="150" stroke="#1e293b"/>
+<text x="64" y="154" font-size="10.5" text-anchor="end" fill="#94a3b8">80%</text>
+<line x1="70" y1="110" x2="860" y2="110" stroke="#1e293b"/>
+<text x="64" y="114" font-size="10.5" text-anchor="end" fill="#94a3b8">90%</text>
+<line x1="70" y1="70" x2="860" y2="70" stroke="#1e293b"/>
+<text x="64" y="74" font-size="10.5" text-anchor="end" fill="#94a3b8">100%</text>
+<text x="70" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">-40 ms</text>
+<text x="169" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">-30 ms</text>
+<text x="268" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">-20 ms</text>
+<text x="366" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">-10 ms</text>
+<text x="465" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">+0 ms</text>
+<text x="564" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">+10 ms</text>
+<text x="662" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">+20 ms</text>
+<text x="761" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">+30 ms</text>
+<text x="860" y="328" font-size="10.5" text-anchor="middle" fill="#94a3b8">+40 ms</text>
+<line x1="465" y1="70" x2="465" y2="310" stroke="#64748b" stroke-dasharray="3 3"/>
+<polyline points="70.0,70.0 168.8,70.0 267.5,70.0 366.2,70.0 465.0,70.0 563.8,96.8 662.5,180.8 761.2,197.6 860.0,268.0" fill="none" stroke="#f59e0b" stroke-width="2.2"/>
+<polyline points="70.0,147.9 168.8,150.6 267.5,155.6 366.2,160.9 465.0,164.4 563.8,170.8 662.5,184.2 761.2,191.9 860.0,206.6" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-dasharray="6 4"/>
+<polyline points="70.0,70.0 168.8,70.0 267.5,70.0 366.2,70.0 465.0,74.4 563.8,117.6 662.5,169.6 761.2,207.6 860.0,252.4" fill="none" stroke="#3b82f6" stroke-width="2.2"/>
+<polyline points="70.0,145.6 168.8,151.6 267.5,154.3 366.2,159.7 465.0,166.3 563.8,174.0 662.5,183.9 761.2,192.7 860.0,204.4" fill="none" stroke="#3b82f6" stroke-width="2.2" stroke-dasharray="6 4"/>
+<text x="662" y="84" font-size="11" fill="#e2e8f0">真实链路比模型长 → 打在板后</text>
+<text x="80" y="300" font-size="11" fill="#94a3b8">左侧（比模型短）偏高来自仿真云台的 30 ms 一阶滞后；按此加补偿在真实视频上反而退化，未采用</text>
+</svg>

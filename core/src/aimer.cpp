@@ -139,7 +139,9 @@ AimCommand RobotAimer::aim(const RobotTracker& tracker, double now) {
         rate_.reset();
     }
     const int previous = last_armor_;
-    const double t0 = now + cfg_.latency;
+    // gimbal_lag: the barrel reaches this command gimbal_lag later, so aim
+    // for the target state that much further ahead (0 = historical).
+    const double t0 = now + cfg_.totalLatency() + cfg_.gimbal_lag;
     RobotTracker::Vec x = tracker.predict(t0);
     double t_fly = flightGuess(ball_, {x[RobotTracker::XC], x[RobotTracker::YC], x[RobotTracker::ZC]});
     const bool center_mode = std::abs(x[RobotTracker::W]) > cfg_.center_mode_omega;
@@ -179,6 +181,7 @@ AimCommand RobotAimer::aim(const RobotTracker& tracker, double now) {
     last_armor_ = k;  // committed choice for the next frame's hysteresis
     cmd.facing_deg = facing * 180 / kPi;
     cmd.t_impact = t0 + cmd.t_fly;
+    cmd.latency = t0 - now - cfg_.gimbal_lag;
 
     // Uncertainty of the aimed plate's lateral position at impact time.
     // WITH process noise: F P F' alone is the covariance of the current
@@ -200,7 +203,8 @@ AimCommand RobotAimer::aim(const RobotTracker& tracker, double now) {
         cfg_.fire_sigma_scale <= 0 || cmd.sigma_lat < cfg_.fire_sigma_scale * geo.panel_width / 2;
 
     const bool tracking = tracker.state() == TrackState::TRACKING;
-    const bool warmed = tracker.trackingFrames() >= cfg_.warmup_frames;
+    const bool warmed = cfg_.warmup_time > 0 ? tracker.trackingTime() >= cfg_.warmup_time
+                                             : tracker.trackingFrames() >= cfg_.warmup_frames;
     if (center_mode) {
         // the plate passes the aim line; it is hittable while its centre is within
         // the tolerance, i.e. while |r sin(facing)| < tol
@@ -229,7 +233,7 @@ AimCommand PointAimer::aim(const PointTracker& tracker, double now) {
         rate_.reset();
         return cmd;
     }
-    const double t0 = now + cfg_.latency;
+    const double t0 = now + cfg_.totalLatency();
     double t_fly = flightGuess(ball_, tracker.position(tracker.predict(t0)));
     bool converged = false;
     for (int it = 0; it < 6; ++it) {  // 6 iterations: the fixed point contracts at ~v_radial/v_bullet per step; 4 was not always enough at long range / low bullet speed (measured 6.8% non-converged over a range/speed/spin census)
@@ -242,6 +246,7 @@ AimCommand PointAimer::aim(const PointTracker& tracker, double now) {
     cmd.valid = true;
     cmd.converged = converged;
     cmd.t_impact = t0 + cmd.t_fly;
+    cmd.latency = t0 - now;
     cmd.fire = converged;  // never fire on an inconsistent solution (see RobotAimer)
     applyAimOffsets(cfg_, cmd);
     rate_.update(cmd.yaw, cmd.pitch, now, cfg_.gimbal_max_rate, cmd.yaw_rate, cmd.pitch_rate);
@@ -257,7 +262,8 @@ AimCommand DirectAimer::aim(const FrameObservations& frame, double now) const {
     if (!aimAt(ball_, frame.armors[idx].position, cmd)) return cmd;
     applyAimOffsets(cfg_, cmd);
     cmd.valid = true;
-    cmd.t_impact = now + cfg_.latency + cmd.t_fly;
+    cmd.t_impact = now + cfg_.totalLatency() + cmd.t_fly;
+    cmd.latency = cfg_.totalLatency();
     cmd.fire = true;
     return cmd;
 }
@@ -297,7 +303,7 @@ int RobotAimer::selectArmor(const TargetState& target, double t, int previous,
     return best;
 }
 
-AimCommand RobotAimer::aim(const TargetState& target, double now) {
+AimCommand RobotAimer::aim(const TargetState& target, double now, double measured_elapsed) {
     AimCommand cmd;
     if (target.state == TrackState::LOST) {
         last_armor_ = -1;
@@ -311,7 +317,8 @@ AimCommand RobotAimer::aim(const TargetState& target, double now) {
         rate_.reset();  // and so is the previous command's rate baseline (B-01)
     }
     const int previous = last_armor_;
-    const double t0 = now + cfg_.latency;
+    const double latency = cfg_.totalLatency(measured_elapsed);
+    const double t0 = now + latency + cfg_.gimbal_lag;  // see the RobotTracker overload
     const double t_center = t0;
     const cv::Vec3d c0 = target.centerAt(t_center);
     double t_fly = flightGuess(ball_, c0);
@@ -348,6 +355,7 @@ AimCommand RobotAimer::aim(const TargetState& target, double now) {
         cmd.facing_deg = facing * 180 / kPi;
         cmd.center_mode = center_mode;
         cmd.t_impact = t0 + cmd.t_fly;
+        cmd.latency = t0 - now - cfg_.gimbal_lag;
         cmd.sigma_lat = a.sigma_lat;
         if (std::abs(new_t - t_fly) < 1e-4) { converged = true; break; }
         t_fly = new_t;

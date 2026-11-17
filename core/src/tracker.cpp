@@ -127,6 +127,7 @@ void RobotTracker::init(const ArmorObservation& obs, double stamp) {
     armor_type = obs.det.type;
     state_ = TrackState::DETECTING;
     detect_count_ = 0;
+    detect_since_ = stamp;
     unmatched_with_target_ = 0;
     unmatched_run_ = 0;
     nis_ema_ = 3.0;
@@ -387,7 +388,11 @@ void RobotTracker::update(const FrameObservations& frame) {
     switch (state_) {
         case TrackState::DETECTING:
             if (matched) {
-                if (++detect_count_ >= cfg_.tracking_thres) state_ = TrackState::TRACKING;
+                // Frame count AND (optionally) elapsed time: at 165 Hz the
+                // frame count alone is only a few milliseconds of evidence.
+                if (++detect_count_ >= cfg_.tracking_thres &&
+                    (cfg_.tracking_thres_time <= 0 || frame.stamp - detect_since_ >= cfg_.tracking_thres_time))
+                    state_ = TrackState::TRACKING;
             } else {
                 state_ = TrackState::LOST;
             }
@@ -397,7 +402,13 @@ void RobotTracker::update(const FrameObservations& frame) {
                 // One or two frames without a match is a detection dropout, not a
                 // lost target: demoting the track also stops firing and resets
                 // every warm-up counter. lost_grace_frames = 0 keeps the old rule.
-                if (++unmatched_run_ > std::max(0, cfg_.lost_grace_frames)) state_ = TrackState::TEMP_LOST;
+                // lost_grace_time > 0 measures the dropout in seconds instead
+                // of frames (the same grace at any camera rate).
+                ++unmatched_run_;
+                const bool grace_over = cfg_.lost_grace_time > 0
+                                            ? frame.stamp - last_match_stamp_ > cfg_.lost_grace_time
+                                            : unmatched_run_ > std::max(0, cfg_.lost_grace_frames);
+                if (grace_over) state_ = TrackState::TEMP_LOST;
             } else {
                 unmatched_run_ = 0;
             }
@@ -411,6 +422,7 @@ void RobotTracker::update(const FrameObservations& frame) {
             break;
         case TrackState::LOST: break;
     }
+    if (state_ == TrackState::TRACKING && tracking_frames_ == 0) tracking_since_ = frame.stamp;
     tracking_frames_ = (state_ == TrackState::TRACKING) ? tracking_frames_ + 1 : 0;
 
     // Divergence guard: the target is visible but nothing matches for a while.
@@ -609,6 +621,7 @@ void OutpostTracker::init(const ArmorObservation& obs, double stamp) {
     armor_type = ArmorType::OUTPOST;
     state_ = TrackState::DETECTING;
     detect_count_ = 0;
+    detect_since_ = stamp;
     unmatched_with_target_ = 0;
     nis_ema_ = 3.0;
     q_scale_ = 1.0;
@@ -779,7 +792,11 @@ void OutpostTracker::update(const FrameObservations& frame) {
     switch (state_) {
         case TrackState::DETECTING:
             if (matched) {
-                if (++detect_count_ >= cfg_.tracking_thres) state_ = TrackState::TRACKING;
+                // Frame count AND (optionally) elapsed time: at 165 Hz the
+                // frame count alone is only a few milliseconds of evidence.
+                if (++detect_count_ >= cfg_.tracking_thres &&
+                    (cfg_.tracking_thres_time <= 0 || frame.stamp - detect_since_ >= cfg_.tracking_thres_time))
+                    state_ = TrackState::TRACKING;
             } else {
                 state_ = TrackState::LOST;
             }

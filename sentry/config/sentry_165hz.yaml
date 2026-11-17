@@ -1,0 +1,162 @@
+%YAML:1.0
+---
+# Sentry configuration for a 165 Hz camera with the split latency chain.
+# Same tuning as sentry.yaml; differences:
+#   * aimer: latency split into transfer / process / comm / fire delays
+#     (team-reported values, 2026-11-17 - see below);
+#   * tracker / target: frame-count thresholds replaced by times, so they
+#     mean the same at 165 Hz as they did at 25 Hz;
+#   * eval: fps 165 and a shot-rate cap for meaningful hits/s.
+# Use:  sentry_robot --mvs --serial /dev/ttyACM0 --config sentry/config/sentry_165hz.yaml
+#
+# STATUS: NOT validated on 165 Hz footage.  The repository's real videos are
+# 25 fps; every 165 Hz number behind this file comes from the simulator
+# (docs/studies/latency_chain_165hz.md).  Re-check against the team's 165 Hz
+# recordings (to be provided) before relying on it.
+# Sentry configuration for the integrated vision pipeline.
+# Values without a comment are the tuned defaults from rm-autoaim; the sentry
+# specifics (extrinsics, outpost, multi-target) are marked.
+#
+# IMPORTANT: fill camera.R_cam2gimbal / t_cam2gimbal from a real measurement.
+# The default (empty R) keeps the old fixed-camera video convention and is only
+# valid for the 3.avi / 4.avi offline evaluation.
+
+camera:
+   fx: 2400.
+   fy: 2400.
+   cx: 720.
+   cy: 540.
+   dist: [ 0., 0., 0., 0., 0. ]
+   pitch_deg: 0.
+   # Row-major camera-optical -> gimbal rotation.  Empty = build from pitch_deg.
+   # Example (camera looking forward, optical axes rotated into gimbal axes):
+   # R_cam2gimbal: [ 0., 0., 1., -1., 0., 0., 0., -1., 0. ]
+   # t_cam2gimbal: [ 0.10, -0.05, 0. ]
+   t_cam2gimbal: [ 0., 0., 0. ]
+
+detector:
+   enemy_color: "red"
+   channel_diff_threshold: 70
+   min_light_length: 8.
+   min_light_aspect: 1.6
+   max_light_aspect: 12.
+   min_fill_ratio: 0.4
+   max_light_tilt_deg: 40.
+   max_pair_angle_diff_deg: 12.
+   max_length_ratio: 1.7
+   max_center_y_diff: 0.6
+   min_gap_ratio: 0.15
+   max_gap_ratio: 3.2
+   min_plate_ratio: 1.1
+   max_plate_ratio: 5.0
+   large_plate_ratio: 3.2
+   reject_contained_lights: 1
+   reject_horizontal_lights: 1   # lying-down blobs are not bars (docs/studies/split_light_merge.md)
+   merge_split_lights: 1         # heal bars split by a saturated core (docs/studies/split_light_merge.md)
+   merge_max_gap_ratio: 0.5
+   refine_corners: 1
+   classify_threshold: 0.7
+   ignore_classes: [ "negative" ]
+
+pose:
+   optimize_yaw: 1
+   armor_pitch_deg: 15.
+   # The outpost plate leans the other way (old sentry used 11*pi/12 vs 13*pi/12).
+   outpost_armor_pitch_deg: -15.
+   outpost_as_large: 1
+   yaw_search_range_deg: 85.
+   yaw_gain: 1.3
+
+tracker:
+   armors_num: 4
+   max_match_distance: 0.35
+   max_match_yaw_diff: 1.0
+   tracking_thres: 3
+   # 165 Hz: three frames are only 18 ms of evidence.  Require the matches to
+   # span 80 ms as well (what three frames meant at 25 Hz).
+   tracking_thres_time: 0.08
+   # A detection dropout up to 20 ms (~3 frames at 165 Hz) keeps TRACKING.
+   lost_grace_time: 0.02
+   lost_time_thres: 0.4
+   q_xyz: 1.0
+   q_yaw: 3.
+   q_yaw_walk: 0.05
+   q_yaw_adapt: 1
+   q_r: 3.0e-3
+   q_dz: 1.0e-4
+   pixel_noise: 1.0
+   r_yaw: 0.01
+   r_yaw_head_on: 0.02
+   init_radius: 0.25
+   min_radius: 0.12
+   max_radius: 0.4
+   q_adapt_max: 20.
+   nis_ema_alpha: 0.2
+   # rm-vision merge: the unified tracker defaults carry_velocity on (infantry
+   # behaviour); the sentry pipeline never had it, keep it off here.
+   carry_velocity: 0
+   singer_tau: 0.3
+   ca_model: 0.
+   q_acc: 2.
+   # Outpost: one radius, three heights.
+   outpost_init_radius: 0.225
+   outpost_min_radius: 0.12
+   outpost_max_radius: 0.4
+   q_outpost_z: 2.5e-4
+   q_outpost_r: 1.0e-4
+
+target:
+   max_distance: 10.
+   lost_keep_time: 1.0
+   association_gate: 1.0   # legacy, unused: one track per identity (see docs/reviews/review_2026-11.md)
+   switch_margin: 0.5
+   require_tracking: 1
+   # Earlier entries win.  A sentry is threatened by shooters, not by the
+   # outpost: shoot 3/4 first, keep outpost last (it is 2000 HP and rarely a
+   # threat).  Reorder per match rule if the sentry is tasked with the base.
+   priority: [ "3", "4", "1", "2", "guard", "base", "outpost" ]
+   # --roi: full-frame rescan at least every 0.2 s (30 frames would be 0.18 s
+   # at 165 Hz, 1.2 s at 25 Hz - a time keeps the blind spot fixed).
+   roi_full_scan_period: 0.2
+
+ballistic:
+   bullet_speed: 25.
+   gravity: 9.8
+   drag_k: 0.019
+   use_drag: 1
+
+aimer:
+   # Latency chain, exposure centre -> bullet leaves the muzzle (seconds).
+   # Team-reported values 2026-11-17 (ranges given by the team; measurement
+   # method and raw data still to be attached before they count as
+   # calibrated - see the calibration-writeback rules): camera exposure 2.5 ms, frame period
+   # 6.06 ms (165 Hz), USB transfer 4.4 ms -> exposure centre to host
+   # 6-14 ms; serial + MCU 10-30 ms; fire actuation 30 ms.  Mid-range values
+   # below.  On the robot sentry_robot MEASURES exposure -> aim per frame and
+   # uses it instead of transfer_delay + process_delay; those two are the
+   # model for offline replay / simulation only.
+   latency: 0.0          # unmodelled remainder
+   transfer_delay: 0.010
+   process_delay: 0.005
+   comm_delay: 0.020     # 10-30 ms team-reported range; recalibrate with --calib-delay + aim-offset trial
+   fire_delay: 0.030
+   side_angle_deg: 20.
+   switch_hysteresis_deg: 3.
+   min_switch_omega: 1.0
+   max_fire_facing_deg: 30.
+   center_mode_omega: 12.
+   center_fire_window_deg: 15.
+   fire_tolerance_scale: 0.9
+   fire_sigma_scale: 0.
+   gimbal_tau: 0.03
+   gimbal_max_rate: 12.
+   # Mechanical trim added to the final command (deg); measure on the robot.
+   yaw_offset_deg: 0.
+   pitch_offset_deg: 0.
+
+eval:
+   fps: 165.
+   # Offline/simulated shots per second (the real rate is the operator's and
+   # the heat limit's business; this only keeps hits/s comparable).
+   max_shot_rate: 20.
+   horizons: [ 0.12, 0.2, 0.32 ]

@@ -108,6 +108,8 @@ Config Config::load(const std::string& path) {
     get(t, "tracking_thres", c.tracker.tracking_thres);
     get(t, "lost_time_thres", c.tracker.lost_time_thres);
     get(t, "lost_grace_frames", c.tracker.lost_grace_frames);
+    get(t, "lost_grace_time", c.tracker.lost_grace_time);
+    get(t, "tracking_thres_time", c.tracker.tracking_thres_time);
     get(t, "q_xyz", c.tracker.q_xyz);
     get(t, "q_yaw", c.tracker.q_yaw);
     get(t, "q_yaw_walk", c.tracker.q_yaw_walk);
@@ -139,6 +141,7 @@ Config Config::load(const std::string& path) {
     get(tg, "switch_margin", c.target.switch_margin);
     get(tg, "require_tracking", c.target.require_tracking);
     getStrings(tg, "priority", c.target.priority);
+    get(tg, "roi_full_scan_period", c.target.roi_full_scan_period);
 
     const auto b = fs["ballistic"];
     get(b, "bullet_speed", c.ballistic.bullet_speed);
@@ -151,6 +154,12 @@ Config Config::load(const std::string& path) {
 
     const auto a = fs["aimer"];
     get(a, "latency", c.aimer.latency);
+    get(a, "transfer_delay", c.aimer.transfer_delay);
+    get(a, "process_delay", c.aimer.process_delay);
+    get(a, "comm_delay", c.aimer.comm_delay);
+    get(a, "fire_delay", c.aimer.fire_delay);
+    get(a, "gimbal_lag", c.aimer.gimbal_lag);
+    get(a, "warmup_time", c.aimer.warmup_time);
     get(a, "yaw_offset_deg", c.aimer.yaw_offset_deg);
     get(a, "pitch_offset_deg", c.aimer.pitch_offset_deg);
     get(a, "side_angle_deg", c.aimer.side_angle_deg);
@@ -169,6 +178,7 @@ Config Config::load(const std::string& path) {
 
     const auto e = fs["eval"];
     get(e, "fps", c.eval.fps);
+    get(e, "max_shot_rate", c.eval.max_shot_rate);
     getDoubles(e, "horizons", c.eval.horizons);
 #ifdef AUTOAIM_ROOT
     if (c.detector.model_path.empty())
@@ -236,6 +246,16 @@ std::vector<std::string> Config::validate() const {
     need(ballistic.bullet_speed > 0, "ballistic.bullet_speed must be > 0");
     need(ballistic.gravity >= 0 && ballistic.drag_k >= 0, "ballistic.gravity and drag_k must be >= 0");
     need(aimer.latency >= 0 && aimer.latency < 1.0, "aimer.latency must be in [0, 1) s");
+    need(aimer.transfer_delay >= 0 && aimer.process_delay >= 0 && aimer.comm_delay >= 0 &&
+             aimer.fire_delay >= 0,
+         "aimer transfer/process/comm/fire delays must be >= 0");
+    need(aimer.totalLatency() < 1.0, "aimer total latency (latency + chain) must be < 1 s");
+    need(aimer.warmup_time >= 0, "aimer.warmup_time must be >= 0");
+    need(aimer.gimbal_lag >= 0 && aimer.gimbal_lag < 0.5, "aimer.gimbal_lag must be in [0, 0.5) s");
+    need(tracker.tracking_thres_time >= 0 && tracker.lost_grace_time >= 0,
+         "tracker.tracking_thres_time and lost_grace_time must be >= 0");
+    need(target.roi_full_scan_period >= 0, "target.roi_full_scan_period must be >= 0");
+    need(eval.max_shot_rate >= 0, "eval.max_shot_rate must be >= 0");
     need(aimer.gimbal_tau > 0 && aimer.gimbal_max_rate > 0, "aimer.gimbal_tau and gimbal_max_rate must be > 0");
     need(aimer.max_fire_facing_deg >= 0 && aimer.max_fire_facing_deg <= 90,
          "aimer.max_fire_facing_deg must be in [0, 90]");
@@ -252,6 +272,15 @@ bool setParam(Config& c, const std::string& key, double v) {
     if (key == "fx") c.camera.fx = c.camera.fy = v;
     else if (key == "camera_pitch") c.camera.pitch_deg = v;
     else if (key == "latency") c.aimer.latency = v;
+    else if (key == "transfer_delay") c.aimer.transfer_delay = v;
+    else if (key == "process_delay") c.aimer.process_delay = v;
+    else if (key == "comm_delay") c.aimer.comm_delay = v;
+    else if (key == "fire_delay") c.aimer.fire_delay = v;
+    else if (key == "gimbal_lag") c.aimer.gimbal_lag = v;
+    else if (key == "warmup_time") c.aimer.warmup_time = v;
+    else if (key == "tracking_thres_time") c.tracker.tracking_thres_time = v;
+    else if (key == "lost_grace_time") c.tracker.lost_grace_time = v;
+    else if (key == "max_shot_rate") c.eval.max_shot_rate = v;
     else if (key == "bullet_speed") c.ballistic.bullet_speed = v;
     else if (key == "bullet_mm") c.ballistic.bullet_mm = static_cast<int>(std::lround(v));
     else if (key == "bullet_speed_42") c.ballistic.bullet_speed_42 = v;
@@ -317,7 +346,9 @@ void Config::saveTuningOverrides(const std::string& path) const {
        << "r_yaw_head_on" << tracker.r_yaw_head_on << "pixel_noise" << tracker.pixel_noise
        << "max_match_distance" << tracker.max_match_distance << "}";
     fs << "aimer" << "{"
-       << "latency" << aimer.latency << "side_angle_deg" << aimer.side_angle_deg
+       << "latency" << aimer.latency << "transfer_delay" << aimer.transfer_delay
+       << "process_delay" << aimer.process_delay << "comm_delay" << aimer.comm_delay
+       << "fire_delay" << aimer.fire_delay << "gimbal_lag" << aimer.gimbal_lag << "side_angle_deg" << aimer.side_angle_deg
        << "center_mode_omega" << aimer.center_mode_omega << "}";
 }
 

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="330" viewBox="0 0 900 330" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+<rect width="900" height="330" fill="#0f172a"/>
+<text x="24" y="30" font-size="17" font-weight="bold" fill="#e2e8f0">延迟链：从曝光到弹丸命中（165 Hz 相机；数值为队伍提供，未经实拍验证）</text>
+<text x="24" y="50" font-size="11.5" fill="#94a3b8">上：出膛前延迟（条宽 = 模型值，细线 = 范围）；下：它与弹丸飞行时间（5 m，25 m/s，阻力 k=0.019）的占比</text>
+<rect x="40.0" y="92" width="124.2" height="40" fill="#3b82f6" opacity="0.9"/>
+<text x="103.1" y="117" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">10 ms</text>
+<text x="103.1" y="150" font-size="11" text-anchor="middle" fill="#e2e8f0">曝光中心→主机内存</text>
+<text x="103.1" y="165" font-size="10.5" text-anchor="middle" fill="#94a3b8">6–14 ms</text>
+<rect x="166.2" y="92" width="61.1" height="40" fill="#14b8a6" opacity="0.9"/>
+<text x="197.7" y="117" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">5 ms</text>
+<text x="197.7" y="150" font-size="11" text-anchor="middle" fill="#e2e8f0">检测+解算+瞄准</text>
+<text x="197.7" y="165" font-size="10.5" text-anchor="middle" fill="#94a3b8">2.5–7 ms</text>
+<rect x="229.2" y="92" width="250.3" height="40" fill="#f59e0b" opacity="0.9"/>
+<text x="355.4" y="117" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">20 ms</text>
+<text x="355.4" y="150" font-size="11" text-anchor="middle" fill="#e2e8f0">串口+MCU</text>
+<text x="355.4" y="165" font-size="10.5" text-anchor="middle" fill="#94a3b8">10–30 ms</text>
+<rect x="481.5" y="92" width="376.5" height="40" fill="#ef4444" opacity="0.9"/>
+<text x="670.8" y="117" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">30 ms</text>
+<text x="670.8" y="150" font-size="11" text-anchor="middle" fill="#e2e8f0">发射机构</text>
+<text x="670.8" y="165" font-size="10.5" text-anchor="middle" fill="#94a3b8">固定</text>
+<text x="40" y="84" font-size="11.5" fill="#e2e8f0">出膛前 ≈ 65 ms（前两段上车时每帧实测，取代模型值）</text>
+<rect x="40" y="210" width="191.9" height="28" fill="#f59e0b"/>
+<rect x="233.9" y="210" width="626.1" height="28" fill="#a78bfa"/>
+<text x="136.9" y="229" font-size="11.5" text-anchor="middle" fill="#0f172a">出膛前 65 ms</text>
+<text x="546.9" y="229" font-size="11.5" text-anchor="middle" fill="#0f172a">弹丸飞行 209.9 ms（3 m 123.5 / 7 m 299.6）</text>
+<text x="40" y="266" font-size="11.5" fill="#e2e8f0">总提前量 ≈ 275 ms：瞄准点 = 目标在「曝光时刻 + 65 ms + 飞行时间」的预测位置；飞行时间随距离由弹道解算迭代求出</text>
+<text x="40" y="286" font-size="11" fill="#94a3b8">10 rad/s 小陀螺上，提前量每错 10 ms，装甲板相位就错 5.7°（半径 0.25 m 处约 2.5 cm）</text>
+</svg>

@@ -4,6 +4,7 @@
 // serial); the app or the robot node only feeds frames and reads AimCommand.
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,9 @@ struct SentryOutput {
     std::vector<autoaim::TargetState> targets;
     int selected = -1;
     autoaim::AimCommand command;
+    // Exposure -> aim interval measured with the host clock (transfer +
+    // processing, incl. any queueing); -1 when no host clock is set.
+    double measured_elapsed = -1.0;
 };
 
 class SentryVision {
@@ -54,6 +58,13 @@ public:
     // the 30-frame period (1.2 s at the 25 fps reference rate, ~0.18 s
     // at a 165 fps camera). Off by default.
     void setRoiEnabled(bool on) { roi_enabled_ = on; }
+    // Host clock in the SAME time base as the `stamp` passed to process()
+    // (the on-robot program: steady clock seconds).  When set, the aimer
+    // measures the real exposure -> aim interval on every frame instead of
+    // assuming aimer.transfer_delay + aimer.process_delay: processing time
+    // varies frame to frame, and every ms of it is a ms of prediction lead.
+    // Leave unset for offline replay, whose stamps are media time.
+    void setHostClock(std::function<double()> clock) { host_clock_ = std::move(clock); }
     // Windows used for the last frame (after merging), for overlays/tests.
     const std::vector<cv::Rect>& roiWindows() const { return roi_windows_; }
     void reset() { manager_.reset(); }
@@ -72,6 +83,8 @@ private:
     bool roi_enabled_ = false;
     std::vector<cv::Rect> roi_windows_;
     int frames_since_full_ = 0;
+    double last_full_scan_stamp_ = -1e18;
+    std::function<double()> host_clock_;
     int prev_active_tracks_ = -1;  // for the scene-change full-scan trigger
     long frame_count_ = 0;  // sequential frame index for observations.frame
 };

@@ -33,10 +33,10 @@
 | `sentry/include/io/` | 1 | 串口端口头文件 |
 | `sentry/src/`（含 `io/`） | 6 | 哨兵实现：TargetManager、SentryVision、串口、哨兵评测策略 |
 | `sentry/apps/` | 2 | `sentry_robot`（上车主程序）、`sentry_offline`（离线调试） |
-| `sentry/config/` | 2 | `sentry.yaml`（哨兵参数）、`default.yaml`（哨兵风味默认） |
+| `sentry/config/` | 3 | `sentry.yaml`（哨兵参数）、`sentry_165hz.yaml`（165 Hz + 延迟链）、`default.yaml`（哨兵风味默认） |
 | `sentry/tools/`（含 `legacy_include/`） | 6 | 旧代码对比台架（与 legacy/ 对照用，非产品构建） |
 | `apps/` | 5 | 步兵侧程序：`autoaim_video`（离线评测）、`autoaim_sim`（仿真）、`autoaim_lights`、`detector_bench` + CMake |
-| `tests/` | 17 | CTest 五项：core 套件（test_main 入口 + 按模块拆分的八个测试文件 + check.hpp/fixtures.hpp）、哨兵、串口、回归门契约（test_regression_gate.py 已注册为 CTest）、头文件自包含；另有缓存集成与视频对齐脚本测试 |
+| `tests/` | 18 | CTest 五项：core 套件（test_main 入口 + 按模块拆分的九个测试文件 + check.hpp/fixtures.hpp）、哨兵、串口、回归门契约（test_regression_gate.py 已注册为 CTest）、头文件自包含；另有缓存集成与视频对齐脚本测试 |
 
 ## 文档与报告
 
@@ -44,13 +44,13 @@
 |---|---|---|
 | `docs/`（根） | 5 | 入口页：本索引、`README.md`（目录导航）、`api_overview`、`parameters`、`performance_charts` |
 | `docs/design/` | 9 | 设计：为什么这样设计 |
-| `docs/studies/` | 28 | 研究：A/B、消融、扫描、压力测试、否决方案 |
+| `docs/studies/` | 29 | 研究：A/B、消融、扫描、压力测试、否决方案 |
 | `docs/calibration/` | 5 | 标定与实测 |
 | `docs/deploy/` | 3 | 部署与目标机 |
 | `docs/reviews/` | 13 | 审查、加固与审计 |
 | `docs/project/` | 13 | 项目史与盘点（含设计档案页 design_archive.html） |
-| `docs/charts/` | 20 | 数据图表（SVG，tools/make_charts.py 生成，见 performance_charts） |
-| `docs/diagrams/` | 3 | 原理示意图（流水线、曝光时刻对齐、整车模型；SVG，tools/make_diagrams.py 生成） |
+| `docs/charts/` | 23 | 数据图表（SVG，tools/make_charts.py 生成，见 performance_charts；latency_* 三张由 tools/latency_study.py 生成） |
+| `docs/diagrams/` | 4 | 原理示意图（流水线、曝光时刻对齐、整车模型、延迟计算与预测原理；SVG，tools/make_diagrams.py 生成） |
 | `docs/figures/` | 2 | 真实画面图（README 头部动图、检测四步图；tools/make_figures.py 用 Release 视频 + 仓内缓存生成） |
 | `docs/assets/` | 1 | 仓库标志 logo.svg（README 顶部居中展示） |
 | `docs/decisions/` | 3 | 架构决策记录 ADR-001 共享核心 / ADR-002 整车 EKF / ADR-003 CameraSource 与曝光戳 |
@@ -123,7 +123,7 @@
 
 | 目录 | 文件数 | 标注 |
 |---|---|---|
-| `tools/` | 17 | 回归/调参/标定脚本（regression、tune_sim、auto_improve、calibrate_intrinsics、check_extrinsics、make_charts、make_diagrams、make_figures 等，路径已按单仓布局更新） |
+| `tools/` | 19 | 回归/调参/标定脚本（regression、tune_sim、auto_improve、calibrate_intrinsics、check_extrinsics、make_charts、make_diagrams、make_figures 等，路径已按单仓布局更新） |
 | `tools/offline_eval/` | 4 | 离线回归台架源码 + 说明（非 CMake 目标，基线证据复现用） |
 | `data/eval_cache/` | 39 | 真视频评测原始数据：两视频的检测缓存（每视频一份去重后的权威副本）+ 全部跟踪 CSV/报告/日志，按视频分 3/、4/ 两组，分类说明见其 README |
 | `tools/tasks/` | 21 | 任务/数据处理脚本集 |
@@ -139,7 +139,7 @@
 
 ## 本轮合并完整性复核（2026-11-10）
 
-当前跟踪文件 380 个（`git ls-files`，2026-11-14 新增独立复现研究与深度复检 2 篇后复核；上次为 2026-11-12 README 视觉化：新增 3 张数据图、3 张示意图、2 张真实画面图与 2 个生成脚本）；迁移审计的 269 个是历史快照。
+当前跟踪文件 389 个（`git ls-files`，2026-11-17 新增延迟链研究与原理图共 9 个文件后复核；2026-11-14 新增独立复现研究与深度复检 2 篇后复核；上次为 2026-11-12 README 视觉化：新增 3 张数据图、3 张示意图、2 张真实画面图与 2 个生成脚本）；迁移审计的 269 个是历史快照。
 2026-11-11：`docs/` 74 篇平铺文档按用途移入 `design/ studies/ calibration/ deploy/ reviews/ project/`
 （只移动不改名，全仓链接逐个重算，链接检查 0 失效），新增 `docs/README.md`、
 `studies/split_light_merge.md` 与一张对比图。

@@ -17,6 +17,7 @@
 #include "sentry/target_manager.hpp"
 #include "autoaim/tracker.hpp"
 #include "sentry/roi.hpp"
+#include "sentry/sentry.hpp"
 #include "sentry/serial_protocol.hpp"
 
 namespace {
@@ -233,10 +234,28 @@ void testSerialProtocol() {
     c.yaw_vel = 333;
     c.found = 1;
     c.fire = 2;
-    const auto b = sentry::packControl(c, 0);
+    c.distance_mm = 4321;  // 0x000010E1 -> bytes 14-17, the legacy ui_y slot
+    const auto b = sentry::packControl(c);
     CHECK(b[0] == 0xAA && b[1] == 0xBB && b[20] == 0xBB);
     CHECK(b[18] == 1 && b[19] == 2);
     CHECK(b[2] == 0 && b[5] == 111);
+    CHECK(b[14] == 0x00 && b[15] == 0x00 && b[16] == 0x10 && b[17] == 0xE1);
+
+    // toSerial carries the aim distance in mm; no target -> 0; a diverged
+    // (huge / non-finite) distance must not overflow the i32 slot.
+    {
+        autoaim::AimCommand ac;
+        ac.valid = true;
+        ac.distance = 4.3215;
+        CHECK(sentry::toSerial(ac).distance_mm == 4322);
+        ac.distance = 1e12;
+        CHECK(sentry::toSerial(ac).distance_mm == 100000);
+        ac.distance = std::nan("");
+        CHECK(sentry::toSerial(ac).distance_mm == 0);
+        ac.valid = false;
+        ac.distance = 4.0;
+        CHECK(sentry::toSerial(ac).distance_mm == 0);
+    }
 
     // CRC extension: packAttitude roundtrips (roll exercises the +pi wire
     // convention), a tampered payload fails the strict parse but still
