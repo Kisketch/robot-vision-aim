@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="330" viewBox="0 0 900 330" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
 <rect width="900" height="330" fill="#0f172a"/>
-<text x="24" y="30" font-size="17" font-weight="bold" fill="#e2e8f0">延迟链：从曝光到弹丸命中（165 Hz 相机，队伍提供的数值）</text>
+<text x="24" y="30" font-size="17" font-weight="bold" fill="#e2e8f0">延迟链：从曝光到弹丸命中（165 Hz 相机；数值为队伍提供，未经实拍验证）</text>
 <text x="24" y="50" font-size="11.5" fill="#94a3b8">上：出膛前延迟（条宽 = 模型值，细线 = 范围）；下：它与弹丸飞行时间（5 m，25 m/s，阻力 k=0.019）的占比</text>
 <rect x="40.0" y="92" width="124.2" height="40" fill="#3b82f6" opacity="0.9"/>
 <text x="103.1" y="117" font-size="12" font-weight="bold" text-anchor="middle" fill="#0f172a">10 ms</text>

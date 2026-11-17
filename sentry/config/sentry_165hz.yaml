@@ -8,6 +8,11 @@
 #     mean the same at 165 Hz as they did at 25 Hz;
 #   * eval: fps 165 and a shot-rate cap for meaningful hits/s.
 # Use:  sentry_robot --mvs --serial /dev/ttyACM0 --config sentry/config/sentry_165hz.yaml
+#
+# STATUS: NOT validated on 165 Hz footage.  The repository's real videos are
+# 25 fps; every 165 Hz number behind this file comes from the simulator
+# (docs/studies/latency_chain_165hz.md).  Re-check against the team's 165 Hz
+# recordings (to be provided) before relying on it.
 # Sentry configuration for the integrated vision pipeline.
 # Values without a comment are the tuned defaults from rm-autoaim; the sentry
 # specifics (extrinsics, outpost, multi-target) are marked.
