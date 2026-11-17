@@ -7,8 +7,6 @@
 // fixed-point iteration on the aim height (same scheme as FYT2024).
 #pragma once
 
-#include <vector>
-
 #include "autoaim/config.hpp"
 
 namespace autoaim {
@@ -19,13 +17,6 @@ struct BallisticSolution {
     double t_fly = 0;  // s
 };
 
-// One sample of a predicted bullet path, in the vertical plane of the shot.
-struct TrajectoryPoint {
-    double s = 0;  // horizontal range from the muzzle (m)
-    double h = 0;  // height relative to the muzzle (m), positive up
-    double t = 0;  // time of flight to this point (s)
-};
-
 class Ballistics {
 public:
     explicit Ballistics(const BallisticConfig& cfg);
@@ -33,12 +24,6 @@ public:
     bool simulate(double pitch, double s, double& height, double& t) const;
     // Pitch that hits (s, h); s horizontal range, h height (metres).
     BallisticSolution solve(double s, double h) const;
-    // The path of a shot fired at `pitch`, sampled at `samples` + 1 evenly
-    // spaced ranges from 0 to s_end (same drag model as simulate()).  Stops
-    // early if the bullet cannot reach a range.  For visualisation and
-    // diagnostics only: it re-integrates per sample, so keep it off the aim
-    // hot path.
-    std::vector<TrajectoryPoint> trajectory(double pitch, double s_end, int samples = 24) const;
     const BallisticConfig& config() const { return cfg_; }
 
     // Active projectile class (17 or 42) and its parameters.  The class is

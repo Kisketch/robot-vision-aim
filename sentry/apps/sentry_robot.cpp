@@ -46,7 +46,6 @@
 #include "autoaim/camera_source.hpp"
 #include "autoaim/config.hpp"
 #include "autoaim/delay_calibration.hpp"
-#include "autoaim/draw.hpp"
 #include "autoaim/pose_buffer.hpp"
 #include "sentry/io/serial_port.hpp"
 #include "sentry/sentry.hpp"
@@ -261,7 +260,6 @@ int main(int argc, char** argv) {
             if (out.command.valid) {
                 const auto center = vision.camera().project(out.targets[out.selected].centerAt(stamp));
                 cv::drawMarker(frame, center, cv::Scalar(0, 255, 255), cv::MARKER_CROSS, 18, 2);
-                autoaim::drawTrajectory(frame, out.command, vision.ballistics(), vision.camera());
                 const auto& ac = cfg.aimer;
                 cv::putText(frame,
                             out.measured_elapsed >= 0

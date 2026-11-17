@@ -105,27 +105,4 @@ void testBallistics() {
         hero.setBulletClass(20);  // unknown class falls back to 17
         CHECK(hero.bulletMm() == 17, "unknown class -> 17");
     }
-    // trajectory(): starts at the muzzle, ends exactly on the solved impact,
-    // time increases monotonically, and the arc rises above the straight
-    // line of sight (gravity compensation); degenerate input gives nothing.
-    {
-        Ballistics b{ BallisticConfig{} };
-        const auto sol = b.solve(5.0, 0.5);
-        const auto path = b.trajectory(sol.pitch, 5.0, 20);
-        CHECK(path.size() == 21, "trajectory sample count %zu", path.size());
-        CHECK(path.front().s == 0 && path.front().h == 0 && path.front().t == 0, "trajectory starts at muzzle");
-        CHECK(std::abs(path.back().s - 5.0) < 1e-12 && std::abs(path.back().h - 0.5) < 1e-3 &&
-                  std::abs(path.back().t - sol.t_fly) < 1e-6,
-              "trajectory ends on the impact: h %f t %f vs %f", path.back().h, path.back().t, sol.t_fly);
-        bool monotone = true, above_los = true;
-        for (std::size_t i = 1; i < path.size(); ++i) {
-            if (!(path[i].t > path[i - 1].t)) monotone = false;
-            if (i + 1 < path.size() && path[i].h <= 0.5 * path[i].s / 5.0) above_los = false;
-        }
-        CHECK(monotone, "trajectory time monotone");
-        CHECK(above_los, "trajectory arcs above the line of sight");
-        CHECK(b.trajectory(sol.pitch, 0.0).empty() && b.trajectory(std::nan(""), 5.0).empty() &&
-                  b.trajectory(sol.pitch, 5.0, 0).empty(),
-              "degenerate trajectory input");
-    }
 }

@@ -10,25 +10,7 @@
 
 namespace autoaim {
 
-// `ballistics` is optional: when given, the predicted bullet path of the
-// command is drawn as well (drawTrajectory).
 void drawOverlay(cv::Mat& img, const FrameObservations& obs, const FrameLog& log, const RobotTracker& geom,
-                 const CameraModel& camera, const Ballistics* ballistics = nullptr);
-
-// Predicted bullet path of `cmd`: fired from the gimbal origin at
-// (cmd.yaw, cmd.pitch), integrated with the drag model out to the horizontal
-// range of cmd.aim_point, projected into the image.  The impact end is
-// labelled with the target distance and the time of flight.  No-op for an
-// invalid command.
-void drawTrajectory(cv::Mat& img, const AimCommand& cmd, const Ballistics& ballistics, const CameraModel& camera,
-                    const cv::Scalar& color = cv::Scalar(0, 165, 255));
-
-// Side view of the same shot inside `box` (range to the right, height up;
-// height exaggerated up to 8x so a few cm of drop stay visible): the line of sight to the aim point, the
-// barrel direction, and the predicted drag trajectory bending down onto the
-// target - the parabola that the camera view (looking along the shot)
-// cannot show.  Labels: distance, drop compensation, flight time and the
-// latency + flight lead.  No-op for an invalid command.
-void drawTrajectorySideView(cv::Mat& img, const AimCommand& cmd, const Ballistics& ballistics, cv::Rect box);
+                 const CameraModel& camera);
 
 }  // namespace autoaim

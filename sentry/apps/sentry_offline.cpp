@@ -14,7 +14,6 @@
 #include <string>
 
 #include "autoaim/config.hpp"
-#include "autoaim/draw.hpp"
 #include "sentry/sentry.hpp"
 
 namespace {
@@ -140,7 +139,6 @@ int main(int argc, char** argv) {
                 const auto& t = out.targets[out.selected];
                 const auto center = vision.camera().project(t.centerAt(stamp));
                 cv::drawMarker(frame, center, cv::Scalar(0, 255, 255), cv::MARKER_CROSS, 18, 2);
-                autoaim::drawTrajectory(frame, out.command, vision.ballistics(), vision.camera());
                 if (out.command.valid && vision.camera().inFront(out.command.aim_point)) {
                     const auto aim = vision.camera().project(out.command.aim_point);
                     cv::circle(frame, aim, 6, cv::Scalar(0, 0, 255), 2);

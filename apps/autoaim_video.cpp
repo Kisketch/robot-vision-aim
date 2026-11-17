@@ -493,13 +493,12 @@ int main(int argc, char** argv) {
         cv::VideoCapture cap(video);
         cap.set(cv::CAP_PROP_POS_FRAMES, render_a);
         RobotTracker geom(cfg.tracker, camera);
-        const Ballistics ballistics(cfg.ballistic);
         cv::VideoWriter writer;
         const std::string vid_path = out_dir + "/" + stem + "_overlay_" + std::to_string(render_a) + "_" +
                                      std::to_string(render_b) + ".avi";
         cv::Mat frame;
         for (int n = render_a; n <= render_b && n < static_cast<int>(obs.size()) && cap.read(frame); ++n) {
-            drawOverlay(frame, obs[n], res.log[n], geom, camera, &ballistics);
+            drawOverlay(frame, obs[n], res.log[n], geom, camera);
             cv::Mat small;
             cv::resize(frame, small, cv::Size(), 0.75, 0.75, cv::INTER_AREA);
             if (!writer.isOpened())

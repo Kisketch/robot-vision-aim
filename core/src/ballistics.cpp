@@ -86,19 +86,6 @@ bool Ballistics::simulate(double pitch, double s_target, double& height, double&
     return false;
 }
 
-std::vector<TrajectoryPoint> Ballistics::trajectory(double pitch, double s_end, int samples) const {
-    std::vector<TrajectoryPoint> out;
-    if (!std::isfinite(pitch) || !std::isfinite(s_end) || s_end <= 0 || samples < 1) return out;
-    out.reserve(samples + 1);
-    for (int i = 0; i <= samples; ++i) {
-        TrajectoryPoint p;
-        p.s = s_end * i / samples;
-        if (!simulate(pitch, p.s, p.h, p.t)) break;
-        out.push_back(p);
-    }
-    return out;
-}
-
 BallisticSolution Ballistics::solve(double s, double h) const {
     BallisticSolution sol;
     if (!std::isfinite(s) || !std::isfinite(h)) return sol;
