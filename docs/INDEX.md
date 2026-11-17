@@ -51,7 +51,7 @@
 | `docs/project/` | 13 | 项目史与盘点（含设计档案页 design_archive.html） |
 | `docs/charts/` | 23 | 数据图表（SVG，tools/make_charts.py 生成，见 performance_charts；latency_* 三张由 tools/latency_study.py 生成） |
 | `docs/diagrams/` | 4 | 原理示意图（流水线、曝光时刻对齐、整车模型、延迟计算与预测原理；SVG，tools/make_diagrams.py 生成） |
-| `docs/figures/` | 2 | 真实画面图（README 头部动图、检测四步图；tools/make_figures.py 用 Release 视频 + 仓内缓存生成） |
+| `docs/figures/` | 4 | 真实画面图（README 头部动图、检测四步图；tools/make_figures.py 用 Release 视频 + 仓内缓存生成；trajectory_* 两张为抛物线轨迹预测演示，见 studies/latency_chain_165hz.md 第 5 节） |
 | `docs/assets/` | 1 | 仓库标志 logo.svg（README 顶部居中展示） |
 | `docs/decisions/` | 3 | 架构决策记录 ADR-001 共享核心 / ADR-002 整车 EKF / ADR-003 CameraSource 与曝光戳 |
 | `docs/detections/` | 11 | 检测效果样例图/视频（说明用；含灯条断裂修复前后对比图） |
@@ -139,7 +139,7 @@
 
 ## 本轮合并完整性复核（2026-11-10）
 
-当前跟踪文件 389 个（`git ls-files`，2026-11-17 新增延迟链研究与原理图共 9 个文件后复核；2026-11-14 新增独立复现研究与深度复检 2 篇后复核；上次为 2026-11-12 README 视觉化：新增 3 张数据图、3 张示意图、2 张真实画面图与 2 个生成脚本）；迁移审计的 269 个是历史快照。
+当前跟踪文件 391 个（`git ls-files`，feat/parabola-prediction 分支：在延迟链研究与原理图 9 个文件之外，加抛物线演示图 2 个；2026-11-14 新增独立复现研究与深度复检 2 篇后复核；上次为 2026-11-12 README 视觉化：新增 3 张数据图、3 张示意图、2 张真实画面图与 2 个生成脚本）；迁移审计的 269 个是历史快照。
 2026-11-11：`docs/` 74 篇平铺文档按用途移入 `design/ studies/ calibration/ deploy/ reviews/ project/`
 （只移动不改名，全仓链接逐个重算，链接检查 0 失效），新增 `docs/README.md`、
 `studies/split_light_merge.md` 与一张对比图。

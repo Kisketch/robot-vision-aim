@@ -4,6 +4,16 @@
 > 合并后也记录全仓级变更，但不追求完整——全仓变更以 git 提交历史与
 > docs/ 下各轮审查文档（如 docs/reviews/engineering_review_r6.md）为准。
 
+## 2026-11-17 — 抛物线轨迹预测（feat/parabola-prediction 分支）
+
+建在延迟链 / 165 Hz 之后的独立分支，主线不含。
+- `Ballistics::trajectory(pitch, s_end, samples)`：与 `simulate()` 同一 RK4 + 二次阻力模型沿射程采样。
+- `drawTrajectory()`：预测弹道投影进画面，弹着端标注距离与飞行时间；
+  `drawTrajectorySideView()`：侧视抛物线小窗（视线、枪管方向、下坠补偿、提前量）。
+  接入 `autoaim_video` overlay、`sentry_offline --render`、`sentry_robot` 调试窗口；只用于显示，不进瞄准热路径。
+- 演示图 `docs/figures/trajectory_lead_4avi.gif`、`trajectory_side_view_3avi.png`；研究文档第 5 节。
+- 验证：构建 0 警告；ctest 5/5（含弹道采样测试）；`autoaim_sim` 与 main 逐字节一致；两套视频门禁 PASS。
+
 ## 2026-11-17 — 延迟链拆分、165 Hz 适配、原理图
 
 详见 [latency_chain_165hz](docs/studies/latency_chain_165hz.md)。
