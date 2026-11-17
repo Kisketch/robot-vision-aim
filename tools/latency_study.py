@@ -100,7 +100,7 @@ def collect(exe):
 def chart_chain(d):
     w, h = 900, 330
     tf = d["t_fly_ms"]["5"]
-    p = mc.open_svg(w, h, "延迟链：从曝光到弹丸命中（165 Hz 相机，队伍提供的数值）",
+    p = mc.open_svg(w, h, "延迟链：从曝光到弹丸命中（165 Hz 相机；数值为队伍提供，未经实拍验证）",
                     "上：出膛前延迟（条宽 = 模型值，细线 = 范围）；下：它与弹丸飞行时间（5 m，25 m/s，阻力 k=0.019）的占比")
     colours = [mc.BLUE, mc.TEAL, mc.AMBER, mc.RED]
     lead = sum(m for _, _, m, _ in CHAIN)
@@ -141,7 +141,7 @@ def chart_chain(d):
 
 def chart_error(d):
     w, h = 900, 360
-    p = mc.open_svg(w, h, "延迟估错的代价（仿真，165 Hz，真值命中）",
+    p = mc.open_svg(w, h, "延迟估错的代价〔仿真推演 165 Hz，非实拍〕",
                     "横轴：真实出膛时刻 − 模型时刻；实线 = 10 rad/s 快速小陀螺，虚线 = 8 场景平均；橙 = 无抖动，蓝 = ±10 ms 抖动")
     x0, x1, y0, y1 = 70, 860, 70, 310
     vmin, vmax = 40, 100
@@ -169,7 +169,7 @@ def chart_error(d):
 def chart_fps(d):
     w, h = 900, 380
     names = list(d["fps"].keys())
-    p = mc.open_svg(w, h, "25 Hz vs 165 Hz：各仿真场景命中率（robot EKF，真值）",
+    p = mc.open_svg(w, h, "25 Hz vs 165 Hz〔两者均为仿真；真实视频只有 25 fps〕",
                     "165 Hz 配置：延迟链 65 ms、按时间计的门限、射频上限 20 发/s；同机同种子")
     rows0 = d["fps"][names[0]]
     x0, y0, y1 = 70, 70, 300

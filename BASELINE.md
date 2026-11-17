@@ -140,6 +140,9 @@ ALL TESTS PASSED
 - 更换 OpenCV 主版本、更换 OS、重编译后，仿真数字可能漂移 ±3 pp；
 - 修改 `core/config/default.yaml` 后，旧基线作废，必须重新生成并提交新的 `reports/`；
 - 25 fps 视频本身是限制条件，实车相机换 100+ fps 后本基线的"预测误差"不再适用，需要新基线。
+- 165 Hz（2026-11-17）：`sentry/config/sentry_165hz.yaml` 与 `docs/studies/latency_chain_165hz.md`
+  里的 165 Hz 结论**全部来自仿真**，本文件的冻结基线仍只覆盖 25 fps 视频。165 Hz 实拍录像由队伍
+  后期提供，届时另建 165 Hz 基线，不与本表混比。
 
 ## 9. 下一步
 

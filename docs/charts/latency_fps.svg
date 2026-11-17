@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="380" viewBox="0 0 900 380" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
 <rect width="900" height="380" fill="#0f172a"/>
-<text x="24" y="30" font-size="17" font-weight="bold" fill="#e2e8f0">25 Hz vs 165 Hz：各仿真场景命中率（robot EKF，真值）</text>
+<text x="24" y="30" font-size="17" font-weight="bold" fill="#e2e8f0">25 Hz vs 165 Hz〔两者均为仿真；真实视频只有 25 fps〕</text>
 <text x="24" y="50" font-size="11.5" fill="#94a3b8">165 Hz 配置：延迟链 65 ms、按时间计的门限、射频上限 20 发/s；同机同种子</text>
 <line x1="70" y1="300" x2="890" y2="300" stroke="#1e293b"/>
 <text x="64" y="304" font-size="10.5" text-anchor="end" fill="#94a3b8">0%</text>

@@ -641,6 +641,7 @@ cmake --build build -j"$(nproc)"
 - [`docs/studies/latency_chain_165hz.md`](docs/studies/latency_chain_165hz.md) —
   延迟链拆分（传输/处理/串口+MCU/发射，上车每帧实测）、165 Hz 适配、延迟估错的代价，
   以及原理图 [`docs/diagrams/aim_timing_principle.svg`](docs/diagrams/aim_timing_principle.svg)。
+  注意：其中 165 Hz 的结论来自仿真推演，仓库的真实视频只有 25 fps，165 Hz 实拍待补。
 - [`docs/calibration/camera_hardware.md`](docs/calibration/camera_hardware.md) — 队伍实际使用的相机
   （海康 MVS 主相机、两台 720p 全向相机）：帧率、曝光、像素格式，以及 USB 带宽注意事项。
 - [`docs/project/pipeline_and_tuning.md`](docs/project/pipeline_and_tuning.md) — 完整的调参
