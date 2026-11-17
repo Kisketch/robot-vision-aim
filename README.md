@@ -801,7 +801,8 @@ over-speed lockout) is a referee constraint, not a tuning target.
 - [`docs/studies/latency_chain_165hz.md`](docs/studies/latency_chain_165hz.md) —
   the latency chain split (transfer / processing / serial + MCU / firing,
   measured per frame on the robot), 165 Hz adaptation, what a mis-estimated
-  latency costs, and the side-view trajectory demo (in Chinese).
+  latency costs, and the principle diagram
+  [`docs/diagrams/aim_timing_principle.svg`](docs/diagrams/aim_timing_principle.svg) (in Chinese).
 - [`docs/calibration/camera_hardware.md`](docs/calibration/camera_hardware.md) — the team's
   actual cameras (Hikrobot MVS main camera, twin 720p omni cameras):
   frame rates, exposures, pixel formats, and the USB bandwidth caveat.

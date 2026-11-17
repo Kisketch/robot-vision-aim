@@ -4,7 +4,7 @@
 > 合并后也记录全仓级变更，但不追求完整——全仓变更以 git 提交历史与
 > docs/ 下各轮审查文档（如 docs/reviews/engineering_review_r6.md）为准。
 
-## 2026-11-17 — 延迟链拆分、165 Hz 适配、侧视弹道演示
+## 2026-11-17 — 延迟链拆分、165 Hz 适配、原理图
 
 详见 [latency_chain_165hz](docs/studies/latency_chain_165hz.md)。
 - **延迟链**：`AimerConfig` 增 `transfer_delay / process_delay / comm_delay / fire_delay`，
@@ -18,26 +18,24 @@
   `tools/latency_study.py` 生成推演数据与 3 张图。
 - **`aimer.gimbal_lag`**（云台响应滞后补偿）：仿真 +1 pp，但真实视频 4.avi 68.6% → 56.3%（40 ms），
   默认 0、不出厂，待上车实测。
-- **演示**：`drawTrajectorySideView()` 侧视小窗（抛物线、视线、枪管方向、下坠补偿、提前量）；
-  overlay 状态行显示“出膛前延迟 + 飞行时间”；`sentry_robot` 调试窗口显示延迟分解。
+- **显示**：overlay 状态行显示“出膛前延迟 + 飞行时间”；`sentry_robot` 调试窗口显示延迟分解。
+- **原理图**：`docs/diagrams/aim_timing_principle.svg`（延迟计算 → 整车 EKF 预测 → 飞行时间迭代 →
+  选板/开火 → 串口），由 `tools/make_diagrams.py` 生成。
+- **抛物线轨迹预测移出主线**：弹道采样、画面弹道曲线、侧视抛物线小窗与效果图挪到
+  `feat/parabola-prediction` 分支；弹道解算本身（仰角、飞行时间）不受影响。
 - 验证：构建 0 警告；ctest 5/5（新增 test_latency.cpp：延迟链、实测替换、按时间门限、射速上限）；
   默认配置下 `autoaim_sim` 输出逐字节不变；视频门禁两套配置 12 项偏差全 0.0。
   仿真门禁在本机未改代码时即为 73.6（机器漂移，需 `--sim-ref 73.6`）。
 
-## 2026-11-17 — 弹道曲线可视化 + 距离下发 MCU
+## 2026-11-17 — 目标距离下发 MCU
 
-- **弹道曲线**：新增 `Ballistics::trajectory(pitch, s_end, samples)`，按与
-  `simulate()` 相同的 RK4 + 二次阻力模型沿射程采样弹道点；新增
-  `autoaim::drawTrajectory()`，把当前 `AimCommand` 的预测弹道投影进画面，
-  弹着端标注目标距离与飞行时间。`autoaim_video` 的 overlay、`sentry_offline
-  --render`、`sentry_robot` 调试窗口均已接入。只用于可视化，不进瞄准热路径。
 - **距离下发**：`SerialCommand` 增 `distance_mm`，`toSerial()` 由
   `AimCommand::distance` 填入（钳在 0–100 m，非有限值记 0），`packControl()`
   写入 21 B 指令帧 byte 14–17（旧协议恒为 0 的 `ui_y` 槽）。帧长、布局不变；
   `packControl` 去掉了原先未被使用的第二个参数。MCU 端要使用距离需固件读取该槽。
 - **装甲尺寸不变**：小装甲仍用 0.135×0.055 m（新检测器板面角点定义）；
   0.130×0.050 m 是旧代码灯条端点定义，不混用。
-- 验证：构建 0 警告；ctest 5/5（新增弹道采样与距离字段测试）；`autoaim_sim`
+- 验证：构建 0 警告；ctest 5/5（新增距离字段测试）；`autoaim_sim`
   输出与改动前逐字节一致（瞄准/弹道解算路径未改动）。
 
 ## 2026-11-14 — MVS 像素格式启动期固定 + 硬件集成前深度复检

@@ -218,7 +218,137 @@ def robot_model():
     save(p, "robot_model.svg")
 
 
+# --------------------------------------------- aim timing principle (zh)
+def aim_timing_principle():
+    """Latency chain + whole-robot prediction + flight-time iteration.
+
+    Numbers: sentry/config/sentry_165hz.yaml (team-reported latency values),
+    core/src/aimer.cpp (6 iterations, 1e-4 s tolerance, fire gates),
+    sentry/src/serial_protocol.cpp (21-byte frame).  Flight times: 25 m/s,
+    k = 0.019 (tools/latency_study.json).
+    """
+    W, H = 1180, 900
+    p = svg(W, H, "自瞄原理：延迟计算 → 整车预测 → 飞行时间迭代 → 开火与下发",
+            "165 Hz 哨兵链路（sentry/config/sentry_165hz.yaml）。所有时间都以曝光中心时刻 t_exp 为原点；"
+            "上车时前两段每帧实测，后两段用配置值。")
+
+    # ---------------- 1. time axis -------------------------------------
+    text(p, 24, 84, "① 时间轴：一帧画面从曝光到命中", 14, INK, weight="bold")
+    x0, y = 60, 150
+    # (label, model ms, range text, colour, how it is obtained)
+    segs = [
+        ("传输", 10, "6–14 ms", BLUE, "曝光 2.5 ms + 读出 + USB 4.4 ms"),
+        ("处理", 5, "每帧实测", TEAL, "检测/PnP/EKF/瞄准"),
+        ("串口+MCU", 20, "10–30 ms", AMBER, "21 B 帧 + MCU 控制周期"),
+        ("发射", 30, "30 ms", RED, "开火 → 出膛（拨弹/摩擦轮）"),
+        ("弹丸飞行", 210, "3 m 124 / 5 m 210 / 7 m 300 ms", "#a78bfa", "RK4 + 二次阻力，逐帧解算"),
+    ]
+    # piecewise scale: the four short segments get room, flight is compressed
+    px = [150, 120, 170, 190, 330]
+    x = x0
+    ticks = [(x0, "t_exp")]
+    for (name, ms, rng, colour, how), w in zip(segs, px):
+        p.append(f'<rect x="{x}" y="{y}" width="{w - 3}" height="34" rx="4" fill="{colour}" opacity="0.88"/>')
+        text(p, x + w / 2, y + 22, f"{name} {ms} ms", 12, BG, "middle", "bold")
+        text(p, x + w / 2, y + 52, rng, 11, INK, "middle")
+        text(p, x + w / 2, y + 68, how, 10.5, MUTED, "middle")
+        x += w
+        ticks.append((x, None))
+    names = ["t_exp\n曝光中心戳", "t_host\n帧到内存", "t_cmd = now\n指令发出", "t_mcu\n云台执行", "t_muzzle\n出膛", "t_impact\n命中"]
+    for (tx, _), nm in zip(ticks, names):
+        p.append(f'<line x1="{tx}" y1="{y - 22}" x2="{tx}" y2="{y + 40}" stroke="{MUTED}" stroke-width="1"/>')
+        a, b = nm.split("\n")
+        text(p, tx, y - 34, a, 11.5, INK, "middle", "bold")
+        text(p, tx, y - 22 + 0, "", 1)
+        text(p, tx + 4, y - 8, b, 10, MUTED)
+    # brackets
+    def bracket(xa, xb, yy, label, colour):
+        p.append(f'<path d="M{xa},{yy - 6} L{xa},{yy} L{xb},{yy} L{xb},{yy - 6}" fill="none" stroke="{colour}" stroke-width="1.6"/>')
+        text(p, xa + 4, yy + 16, label, 11.5, colour)
+    bracket(x0, x0 + 270, y + 92, "elapsed = now − t_exp（上车每帧实测；离线用 transfer_delay + process_delay）", TEAL)
+    bracket(x0 + 270, x0 + 630, y + 128, "comm_delay + fire_delay（配置值，暂无逐帧测量手段）", AMBER)
+    bracket(x0, x0 + 630, y + 164, "出膛前延迟 L = latency + elapsed + comm_delay + fire_delay ≈ 65 ms", INK)
+    bracket(x0, x0 + 960, y + 200, "瞄准时刻 T = t_exp + L + t_fly（总提前量 ≈ 190–365 ms，随距离变）", "#a78bfa")
+
+    # ---------------- 2. pipeline --------------------------------------
+    yb = 420
+    text(p, 24, yb - 14, "② 每帧计算流程", 14, INK, weight="bold")
+    bw, bh, gap = 176, 168, 14
+    blocks = [
+        ("1 打戳与姿态", BLUE, ["曝光中心戳 t_exp", "PoseBuffer 在 t_exp", "SLERP 插值云台姿态", "→ 世界系（重力对齐）", "无姿态样本 → 丢帧"]),
+        ("2 检测 + PnP", AMBER, ["灯条 → 装甲板四角点", "IPPE 双解 + yaw 搜索", "板位置 p、朝向 yaw", "距离 d = |p|", "（距离也下发 MCU）"]),
+        ("3 整车 EKF", TEAL, ["状态：中心 x,y,z 与速度", "yaw、ω、r1、r2、dz", "在 t_exp 融合观测", "predict(t)：Singer 阻尼", "速度 + 匀角速转动"]),
+        ("4 飞行时间迭代", TEAL, ["t_fly ← 初值", "x̂ = predict(t_exp+L+t_fly)", "选板 k → 瞄准点 P", "solve(P) → pitch, t_fly′", "|Δt| < 0.1 ms 或 6 次"]),
+        ("5 开火判定", RED, ["TRACKING 且已收敛", "|朝向角| < 30°", "σ 门控（可选，哨兵关）", "云台在板角宽内", "|ω| > 12 → 中心模式"]),
+        ("6 串口下发", BLUE, ["yaw, pitch (+补偿)", "yaw_vel 前馈", "distance_mm", "found, fire", "21 B 帧 → MCU"]),
+    ]
+    xs = 24
+    for i, (title, colour, lines) in enumerate(blocks):
+        bx = xs + i * (bw + gap)
+        box(p, bx, yb, bw, bh, stroke=colour)
+        text(p, bx + bw / 2, yb + 24, title, 13, colour, "middle", "bold")
+        for j, ln in enumerate(lines):
+            text(p, bx + 10, yb + 50 + j * 22, ln, 11.2, INK)
+        if i < len(blocks) - 1:
+            arrow(p, bx + bw + 1, yb + bh / 2, bx + bw + gap - 1, yb + bh / 2)
+    # loop arrow on block 4
+    b4 = xs + 3 * (bw + gap)
+    p.append(f'<path d="M{b4 + bw - 14},{yb + bh - 8} C{b4 + bw + 6},{yb + bh + 30} {b4 - 6},{yb + bh + 30} {b4 + 14},{yb + bh - 8}" '
+             f'fill="none" stroke="{TEAL}" stroke-width="1.6" marker-end="url(#at)"/>')
+    text(p, b4 + bw / 2, yb + bh + 34, "t_fly 依赖 P 的距离，P 又依赖 t_fly：不动点迭代", 10.5, TEAL, "middle")
+
+    # ---------------- 3. prediction geometry ---------------------------
+    yg = 660
+    text(p, 24, yg - 14, "③ 综合预测：瞄准的是“子弹到达时”装甲板的位置", 14, INK, weight="bold")
+    box(p, 24, yg, 560, 210)
+    # top view: robot at time t_exp (grey) and at T (teal)
+    cx0, cy0, cx1, cy1, r = 120, yg + 105, 235, yg + 95, 50
+    for (cx, cy, col, yaw0, lab) in ((cx0, cy0, MUTED, 0.3, "t_exp 时"), (cx1, cy1, TEAL, 1.25, "T 时（预测）")):
+        p.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="{col}" stroke-dasharray="4 3"/>')
+        for k in range(4):
+            a = yaw0 + k * math.pi / 2
+            ax, ay = cx - r * math.cos(a), cy - r * math.sin(a)
+            dx, dy = 14 * math.sin(a), -14 * math.cos(a)
+            p.append(f'<line x1="{ax - dx:.1f}" y1="{ay - dy:.1f}" x2="{ax + dx:.1f}" y2="{ay + dy:.1f}" stroke="{col}" stroke-width="4"/>')
+        p.append(f'<circle cx="{cx}" cy="{cy}" r="3" fill="{col}"/>')
+        text(p, cx, cy + r + 22, lab, 11, col, "middle")
+    arrow(p, cx0 + 4, cy0 - 2, cx1 - 6, cy1 - 1, TEAL, "at")
+    text(p, (cx0 + cx1) / 2, cy0 - 12, "v·Δt", 11, TEAL, "middle")
+    # aimed plate at T: the one facing the barrel
+    a = 1.25 + math.pi / 2 * 2
+    px_, py_ = cx1 - r * math.cos(a), cy1 - r * math.sin(a)
+    p.append(f'<circle cx="{px_:.1f}" cy="{py_:.1f}" r="8" fill="none" stroke="{RED}" stroke-width="2"/>')
+    text(p, px_ + 12, py_ + 4, "P：被选中的板", 11, RED)
+    # barrel at the left
+    p.append(f'<circle cx="44" cy="{yg + 190}" r="5" fill="{INK}"/>')
+    text(p, 54, yg + 194, "枪口", 10.5, MUTED)
+    p.append(f'<line x1="44" y1="{yg + 190}" x2="{px_:.1f}" y2="{py_:.1f}" stroke="{RED}" stroke-dasharray="5 4"/>')
+    for j, ln in enumerate([
+        "中心 c(T) = c + v·τ(1 − e^(−Δt/τ))",
+        "（Singer 速度阻尼，τ = 0.3 s）",
+        "第 k 块板角度 θk = yaw + ω·Δt + k·π/2",
+        "板位置 Pk = c(T) − r_k·(cos θk, sin θk) + dz_k",
+        "Δt = T − t_exp = L + t_fly",
+    ]):
+        text(p, 318, yg + 36 + j * 22, ln, 10.8, INK)
+
+    box(p, 600, yg, 556, 210)
+    for j, (ln, col) in enumerate([
+        ("为什么每一段都要算进去", INK),
+        ("10 rad/s 小陀螺：Δt 每错 10 ms，板的相位错 5.7°（半径 0.25 m 处约 2.5 cm）", MUTED),
+        ("仿真 165 Hz：漏算 30 ms 发射延迟 → 10 rad/s 命中率 98.9% → 65.3%", AMBER),
+        ("串口+MCU 抖动 ±10 ms → 8 场景平均只掉约 0.5 pp", MUTED),
+        ("估短比估长代价大：拿不准时宁可让模型略长", INK),
+        ("云台滞后补偿 gimbal_lag：仿真 +1 pp，真实视频退化 → 默认 0", RED),
+        ("帧率无关：门限按时间（tracking 80 ms、丢帧宽限 20 ms）", TEAL),
+        ("数据：docs/studies/latency_chain_165hz.md", MUTED),
+    ]):
+        text(p, 616, yg + 28 + j * 23, ln, 11.5 if j == 0 else 10.8, col, weight="bold" if j == 0 else "normal")
+    save(p, "aim_timing_principle.svg")
+
+
 if __name__ == "__main__":
     pipeline()
     time_alignment()
     robot_model()
+    aim_timing_principle()

@@ -1,4 +1,4 @@
-# 延迟链拆分 + 165 Hz 适配 + 弹道可视化（2026-11-17）
+# 延迟链拆分 + 165 Hz 适配（2026-11-17）
 
 **结论先行**
 - 原来所有延迟都打包成一个常数 `aimer.latency = 60 ms`。现在拆成四段：
@@ -119,28 +119,21 @@
 在车载算力上可能超预算。超预算时帧会排队，而排队时间会被每帧实测计入提前量，所以不会悄悄打偏，
 但提前量会变长。如果车载机超预算，应开启 `--roi`（检测 1.3–1.6 ms），并让相机源只取最新帧。
 
-## 4. 效果图
+## 4. 原理图
 
-真实视频（4.avi，约 8 rad/s 小陀螺，25 fps 录像，用 165 Hz 配置的延迟链渲染，画面已提亮）：
-橙线是投影到画面上的预测弹道，弹着点旁标注距离和飞行时间；
-右下角侧视小窗画出抛物线弹道、视线（灰）、枪管方向（青）和目标板（红），
-并标注下坠补偿量和“出膛前延迟 + 飞行时间”。
+![自瞄原理：延迟计算与预测](../diagrams/aim_timing_principle.svg)
 
-![弹道与提前量演示](../figures/trajectory_lead_4avi.gif)
+由 `tools/make_diagrams.py` 生成。图中从左到右依次是：曝光打戳、延迟链（每段的计算方法）、
+整车 EKF 外推、飞行时间的不动点迭代、选板与开火判定，以及串口下发的内容。
 
-![侧视弹道（3.avi 第 1610 帧）](../figures/trajectory_side_view_3avi.png)
-
-从相机看，弹道几乎沿视线方向，所以在画面里只是一条从上往下落到目标的线。
-抛物线只有在侧视里才看得出来：6.8 m 处下坠补偿约 51 cm、飞行 331 ms。
+抛物线轨迹预测（按射程采样弹道点、画面弹道曲线、侧视抛物线小窗和效果图）不在本分支，
+放在 `feat/parabola-prediction` 分支上。
 
 ## 复现
 
 ```bash
 cmake --build build -j
 python3 tools/latency_study.py          # 跑仿真 → tools/latency_study.json + 3 张图
-./build/apps/autoaim_video video/4.avi --config core/config/default.yaml \
-  --set latency=0 --set transfer_delay=0.010 --set process_delay=0.005 \
-  --set comm_delay=0.020 --set fire_delay=0.030 --render 2600:2725
 ./build/apps/autoaim_video video/4.avi --sweep gimbal_lag=0,0.01,0.02,0.03,0.04
 ```
 
