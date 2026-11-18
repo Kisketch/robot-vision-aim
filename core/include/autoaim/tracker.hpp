@@ -23,6 +23,7 @@
 
 #include <string>
 #include <limits>
+#include <deque>
 #include <vector>
 
 #include "autoaim/config.hpp"
@@ -125,6 +126,10 @@ private:
     int unmatched_run_ = 0;  // consecutive unmatched frames inside TRACKING
     double detect_since_ = 0;    // stamp the current DETECTING phase began
     double tracking_since_ = 0;  // stamp the current TRACKING phase began
+    // Single-plate freeze: recent matched (stamp, armor slot) pairs, and
+    // the yaw/geometry process-noise scale they imply (1 = no freeze).
+    std::deque<std::pair<double, int>> match_hist_;
+    double obs_scale_cur_ = 1.0;
     double nis_ema_ = 3.0;
     int tracking_frames_ = 0;
     double q_scale_ = 1.0;

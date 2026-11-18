@@ -22,6 +22,7 @@ void testAssociationDiagnostics();
 void testTracker();
 void testTrackerCaModel();
 void testTrackerDropoutGrace();
+void testSinglePlateFreeze();
 void testYawProcessNoiseSplit();
 void testAimerPhaseLead();
 void testShotJudgeNonUniform();
@@ -55,6 +56,7 @@ int main() {
     testTracker();
     testTrackerCaModel();
     testTrackerDropoutGrace();
+    testSinglePlateFreeze();
     testYawProcessNoiseSplit();
     testAimerPhaseLead();
     testShotJudgeNonUniform();

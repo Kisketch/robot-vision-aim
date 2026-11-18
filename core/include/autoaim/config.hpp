@@ -138,6 +138,15 @@ struct TrackerConfig {
     int q_yaw_adapt = 0;
     double q_r = 1e-4;
     double q_dz = 1e-4;
+    // Single-plate freeze (docs/studies/single_plate_freeze.md): while only
+    // one armor slot has been matched inside the last obs_freeze_window
+    // seconds -- the regime where yaw and the radii are weakly observable --
+    // the yaw and geometry process noises are multiplied by
+    // obs_freeze_scale. 1.0 = off (the default). Engages only in TRACKING
+    // and only once the track has lived a full window, so acquisition and
+    // spinning targets are untouched. RobotTracker only.
+    double obs_freeze_scale = 1.0;
+    double obs_freeze_window = 1.5;
     // measurement noise
     double pixel_noise = 1.0;         // px, corner noise used for anisotropic position R
     double r_yaw = 0.06;              // rad^2

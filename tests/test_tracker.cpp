@@ -107,6 +107,74 @@ void testTracker() {
                 x[RobotTracker::R1], x[RobotTracker::R2], r);
 }
 
+void testSinglePlateFreeze() {
+    CameraConfig cc;
+    CameraModel cam(cc);
+    // Shipped tuning (default.yaml) has q_r = 3e-3; the struct default
+    // (1e-4) would make the geometry random walk too small to observe.
+    TrackerConfig off;  // obs_freeze_scale = 1: freeze off (default)
+    off.q_r = 3e-3;
+    TrackerConfig on = off;
+    on.obs_freeze_scale = 0.05;
+    on.obs_freeze_window = 1.5;
+
+    // Noiseless single-plate observations generated from the tracker's own
+    // model (true radius 0.20 vs init_radius 0.25). Along the ray the
+    // centre/radius split is unobservable, so the state stays at the prior;
+    // what the freeze changes is the covariance: with a full window of
+    // single-slot evidence the yaw and geometry process noise is scaled
+    // down, so their covariances must end up smaller than the unfrozen
+    // tracker's, while tracking itself is unaffected.
+    RobotTracker probe(off, cam);
+    RobotTracker::Vec xt = RobotTracker::Vec::all(0);
+    xt[RobotTracker::XC] = 5, xt[RobotTracker::YC] = 0.2, xt[RobotTracker::ZC] = -0.1;
+    xt[RobotTracker::YAW] = 0.2, xt[RobotTracker::R1] = 0.20, xt[RobotTracker::R2] = 0.20;
+    const cv::Vec3d plate = probe.armorPosition(xt, 0);
+    RobotTracker tr_off(off, cam), tr_on(on, cam);
+    for (int n = 0; n < 200; ++n) {  // 4 s at 50 fps
+        FrameObservations f;
+        f.frame = n, f.stamp = n / 50.0;
+        ArmorObservation o;
+        o.position = plate;
+        o.distance = cv::norm(plate);
+        o.yaw = probe.armorYaw(xt, 0);
+        o.det.number = "3";
+        o.det.left.length = o.det.right.length = 20;
+        o.image_center_dist = 100;
+        f.armors = {o};
+        tr_off.update(f);
+        tr_on.update(f);
+    }
+    CHECK(tr_off.state() == TrackState::TRACKING && tr_on.state() == TrackState::TRACKING,
+          "single-plate freeze: both trackers tracking");
+    const auto& po = tr_off.P();
+    const auto& pn = tr_on.P();
+    std::printf("single-plate freeze: P_yaw off %.3e on %.3e, P_r off %.3e on %.3e\n",
+                po(RobotTracker::YAW, RobotTracker::YAW), pn(RobotTracker::YAW, RobotTracker::YAW),
+                po(RobotTracker::R1, RobotTracker::R1), pn(RobotTracker::R1, RobotTracker::R1));
+    CHECK(pn(RobotTracker::R1, RobotTracker::R1) < 0.7 * po(RobotTracker::R1, RobotTracker::R1),
+          "freeze suppresses geometry covariance growth");
+    CHECK(pn(RobotTracker::YAW, RobotTracker::YAW) < po(RobotTracker::YAW, RobotTracker::YAW),
+          "freeze suppresses yaw covariance growth");
+    CHECK(cv::norm(tr_off.armorPosition(tr_off.x(), 0) - plate) < 0.01 &&
+              cv::norm(tr_on.armorPosition(tr_on.x(), 0) - plate) < 0.01,
+          "freeze does not hurt the tracked plate prediction");
+
+    // Spinning target: slots cycle inside the window, so the freeze must
+    // never engage and the on/off trajectories stay bit-identical.
+    Spinner spin;
+    spin.w = 3.0;
+    spin.r = 0.24;
+    RobotTracker s_off(off, cam), s_on(on, cam);
+    for (int n = 0; n < 200; ++n) {
+        const auto f = spin.frame(n / 50.0, n);
+        s_off.update(f);
+        s_on.update(f);
+    }
+    CHECK(cv::norm(s_on.x() - s_off.x()) == 0 && cv::norm(s_on.P() - s_off.P()) == 0,
+          "freeze must not engage while spinning");
+}
+
 void testTrackerCaModel() {
     // The CA (constant-acceleration) branch is off by default and was previously
     // exercised by no test at all. Spin the target up (yaw = w0 t + a t^2 / 2)
