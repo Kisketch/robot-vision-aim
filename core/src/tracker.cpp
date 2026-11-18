@@ -132,6 +132,8 @@ void RobotTracker::init(const ArmorObservation& obs, double stamp) {
     unmatched_run_ = 0;
     nis_ema_ = 3.0;
     q_scale_ = 1.0;
+    match_hist_.clear();
+    obs_scale_cur_ = 1.0;
 }
 
 void RobotTracker::transition(double dt, Mat& F, Mat& Q) const {
@@ -153,19 +155,21 @@ void RobotTracker::transition(double dt, Mat& F, Mat& Q) const {
         F(VYC, AY) = dt;
     }
     Q = Mat::zeros();
+    // Single-plate freeze scale, maintained by update() (1 = no freeze).
+    const double oscale = obs_scale_cur_;
     const double qxyz = cfg_.q_xyz * q_scale_;
     addWhiteNoiseAccel(Q, XC, qxyz, dt);
     addWhiteNoiseAccel(Q, YC, qxyz, dt);
     addWhiteNoiseAccel(Q, ZC, qxyz * 0.25, dt);
-    addWhiteNoiseAccel(Q, YAW, cfg_.q_yaw * (cfg_.q_yaw_adapt ? q_yaw_scale_ : 1.0), dt);
-    Q(YAW, YAW) += cfg_.q_yaw_walk * dt;
+    addWhiteNoiseAccel(Q, YAW, cfg_.q_yaw * (cfg_.q_yaw_adapt ? q_yaw_scale_ : 1.0) * oscale, dt);
+    Q(YAW, YAW) += cfg_.q_yaw_walk * oscale * dt;
     if (cfg_.ca_model > 0) {
         Q(AXC, AXC) += cfg_.q_acc * dt;
         Q(AY, AY) += cfg_.q_acc * dt;
     }
-    Q(R1, R1) += cfg_.q_r * dt;
-    Q(R2, R2) += cfg_.q_r * dt;
-    Q(DZ, DZ) += cfg_.q_dz * dt;
+    Q(R1, R1) += cfg_.q_r * oscale * dt;
+    Q(R2, R2) += cfg_.q_r * oscale * dt;
+    Q(DZ, DZ) += cfg_.q_dz * oscale * dt;
 }
 
 void RobotTracker::predictTo(double t) {
@@ -360,6 +364,7 @@ void RobotTracker::update(const FrameObservations& frame) {
         used_obs[p.obs] = used_k[p.k] = true;
         double nis_pos = 0;
         updateWith(frame.armors[p.obs], p.k, nis_pos);
+        if (cfg_.obs_freeze_scale < 1.0) match_hist_.emplace_back(frame.stamp, p.k);
         nis_sum += nis_pos;
         nis_yaw_sum += last_nis_yaw;  // written by updateWith for this match
         ++matched_count;
@@ -424,6 +429,26 @@ void RobotTracker::update(const FrameObservations& frame) {
     }
     if (state_ == TrackState::TRACKING && tracking_frames_ == 0) tracking_since_ = frame.stamp;
     tracking_frames_ = (state_ == TrackState::TRACKING) ? tracking_frames_ + 1 : 0;
+
+    // Single-plate freeze trigger: engage only on a full window of
+    // single-slot evidence -- the track is at least one window old, exactly
+    // one armor slot was matched inside the window, and the last match is
+    // recent. Any second slot in the window (a spinning target) keeps the
+    // freeze off.
+    if (cfg_.obs_freeze_scale < 1.0) {
+        while (!match_hist_.empty() && frame.stamp - match_hist_.front().first > cfg_.obs_freeze_window)
+            match_hist_.pop_front();
+        bool seen[8] = {};
+        for (const auto& m : match_hist_) if (m.second >= 0 && m.second < 8) seen[m.second] = true;
+        int distinct = 0;
+        for (bool b : seen) distinct += b ? 1 : 0;
+        const bool single_plate = distinct == 1 && !match_hist_.empty() &&
+                                  frame.stamp - last_match_stamp_ <= cfg_.obs_freeze_window &&
+                                  frame.stamp - detect_since_ >= cfg_.obs_freeze_window;
+        obs_scale_cur_ = (state_ == TrackState::TRACKING && single_plate)
+                             ? cfg_.obs_freeze_scale
+                             : 1.0;
+    }
 
     // Divergence guard: the target is visible but nothing matches for a while.
     if (!matched && target_seen) {

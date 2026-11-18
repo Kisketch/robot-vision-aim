@@ -116,6 +116,8 @@ Config Config::load(const std::string& path) {
     get(t, "q_yaw_adapt", c.tracker.q_yaw_adapt);
     get(t, "q_r", c.tracker.q_r);
     get(t, "q_dz", c.tracker.q_dz);
+    get(t, "obs_freeze_scale", c.tracker.obs_freeze_scale);
+    get(t, "obs_freeze_window", c.tracker.obs_freeze_window);
     get(t, "pixel_noise", c.tracker.pixel_noise);
     get(t, "r_yaw", c.tracker.r_yaw);
     get(t, "r_yaw_head_on", c.tracker.r_yaw_head_on);
@@ -243,6 +245,8 @@ std::vector<std::string> Config::validate() const {
     need(tracker.q_xyz >= 0 && tracker.q_yaw >= 0 && tracker.q_r >= 0 && tracker.q_dz >= 0 &&
              tracker.q_yaw_walk >= 0,
          "tracker process noises must be >= 0");
+    need(tracker.obs_freeze_scale > 0 && tracker.obs_freeze_scale <= 1 && tracker.obs_freeze_window > 0,
+         "tracker.obs_freeze_scale must be in (0, 1] and obs_freeze_window > 0");
     need(ballistic.bullet_speed > 0, "ballistic.bullet_speed must be > 0");
     need(ballistic.gravity >= 0 && ballistic.drag_k >= 0, "ballistic.gravity and drag_k must be >= 0");
     need(aimer.latency >= 0 && aimer.latency < 1.0, "aimer.latency must be in [0, 1) s");
@@ -292,6 +296,8 @@ bool setParam(Config& c, const std::string& key, double v) {
     else if (key == "lost_grace") c.tracker.lost_grace_frames = static_cast<int>(std::lround(v));
     else if (key == "q_r") c.tracker.q_r = v;
     else if (key == "q_dz") c.tracker.q_dz = v;
+    else if (key == "obs_freeze_scale") c.tracker.obs_freeze_scale = v;
+    else if (key == "obs_freeze_window") c.tracker.obs_freeze_window = v;
     else if (key == "r_yaw") c.tracker.r_yaw = v;
     else if (key == "r_yaw_head_on") c.tracker.r_yaw_head_on = v;
     else if (key == "pixel_noise") c.tracker.pixel_noise = v;

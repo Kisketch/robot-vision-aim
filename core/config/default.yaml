@@ -99,6 +99,8 @@ tracker:
    q_yaw_adapt: 1
    q_r: 3.0e-3           # radius process noise: apparent size changes when approaching
    q_dz: 1.0e-4
+   # obs_freeze_scale: 0.05  # single-plate freeze, docs/studies/single_plate_freeze.md (1.0 = off)
+   # obs_freeze_window: 1.5
    pixel_noise: 1.0
    r_yaw: 0.01            # tuned: measured yaw scatter is ~5 deg
    r_yaw_head_on: 0.02
