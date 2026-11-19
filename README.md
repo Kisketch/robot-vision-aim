@@ -14,7 +14,7 @@
   <a href="https://github.com/Kisketch/robot-vision-aim/actions/workflows/ci.yml"><img src="https://github.com/Kisketch/robot-vision-aim/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <img src="https://img.shields.io/badge/C%2B%2B-17-3b82f6" alt="C++17">
   <img src="https://img.shields.io/badge/OpenCV-4-14b8a6" alt="OpenCV 4">
-  <img src="https://img.shields.io/badge/license-MIT-f59e0b" alt="MIT license">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-f59e0b" alt="AGPL-3.0 license">
 </p>
 
 <p align="center">
@@ -955,5 +955,8 @@ over-speed lockout) is a referee constraint, not a tuning target.
 
 ## License
 
-MIT — see `LICENSE`. Third-party components and the ideas adapted from
-other open-source RoboMaster projects are credited in `THIRD_PARTY.md`.
+AGPL-3.0 — see `LICENSE`. Versions up to and including commit `5dca7de`
+were released under the MIT License; that grant remains in effect for
+those versions. Third-party components and the ideas adapted from
+other open-source RoboMaster projects are credited in `THIRD_PARTY.md`;
+the archived `legacy/` tree keeps its own Mulan PSL v2 license.

@@ -511,6 +511,6 @@ docs/             figures, detection panels and clips, YOLO plan, backlog
 
 ## License
 
-MIT — see [`LICENSE`](../../LICENSE). Third-party components keep their own terms:
+AGPL-3.0 — see [`LICENSE`](../../LICENSE). Third-party components keep their own terms:
 `chenjunnn/rm_auto_aim` (MIT) and `CSU-FYT-Vision/FYT2024_vision` (Apache-2.0);
 the exact mapping is in "What was taken from where" above.

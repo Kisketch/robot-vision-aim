@@ -14,7 +14,7 @@
   <a href="https://github.com/Kisketch/robot-vision-aim/actions/workflows/ci.yml"><img src="https://github.com/Kisketch/robot-vision-aim/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <img src="https://img.shields.io/badge/C%2B%2B-17-3b82f6" alt="C++17">
   <img src="https://img.shields.io/badge/OpenCV-4-14b8a6" alt="OpenCV 4">
-  <img src="https://img.shields.io/badge/license-MIT-f59e0b" alt="MIT license">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-f59e0b" alt="AGPL-3.0 license">
 </p>
 
 <p align="center">
@@ -759,5 +759,6 @@ cmake --build build -j"$(nproc)"
 
 ## 许可证
 
-MIT — 见 `LICENSE`。第三方组件，以及借鉴自其他开源 RoboMaster 项目的思路，在
-`THIRD_PARTY.md` 中致谢。
+AGPL-3.0 — 见 `LICENSE`。`5dca7de` 及之前的版本已按 MIT 发布，该授权对那些
+版本继续有效。第三方组件，以及借鉴自其他开源 RoboMaster 项目的思路，在
+`THIRD_PARTY.md` 中致谢；归档的 `legacy/` 树保留其自身的木兰宽松许可证第 2 版。
