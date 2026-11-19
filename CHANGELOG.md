@@ -4,6 +4,13 @@
 > 合并后也记录全仓级变更，但不追求完整——全仓变更以 git 提交历史与
 > docs/ 下各轮审查文档（如 docs/reviews/engineering_review_r6.md）为准。
 
+## 2026-11-18 — 许可证由 MIT 变更为 AGPL-3.0
+
+- **根许可证**：`LICENSE` 由 MIT 全文替换为 GNU AGPL-3.0 全文（FSF 官方文本），自本提交起生效。
+- **不溯及既往**：`5dca7de` 及之前的版本已按 MIT 发布，该授权对那些版本继续有效、不可撤回。
+- **子树不变**：`legacy/` 仍为其自带的木兰宽松许可证第 2 版；第三方组件的来源与条款见 `THIRD_PARTY.md`。
+- 同步更新中英文 README 的许可证徽章与段落、`THIRD_PARTY.md` 与 `docs/project/pipeline_and_tuning.md` 的许可证表述。本次无代码变更。
+
 ## 2026-11-17 — 延迟链拆分、165 Hz 适配、原理图
 
 详见 [latency_chain_165hz](docs/studies/latency_chain_165hz.md)。
